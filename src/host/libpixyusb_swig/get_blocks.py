@@ -6,7 +6,7 @@ from ctypes import *
 print ("Pixy Python SWIG Example -- Get Blocks")
 
 # Initialize Pixy Interpreter thread #
-pixy_init()
+pixy_init(0)
 
 class Blocks (Structure):
   _fields_ = [ ("type", c_uint),
@@ -23,7 +23,7 @@ frame  = 0
 # Wait for blocks #
 while 1:
 
-  count = pixy_get_blocks(100, blocks)
+  count = pixy_get_blocks(0, 100, blocks)
 
   if count > 0:
     # Blocks found #

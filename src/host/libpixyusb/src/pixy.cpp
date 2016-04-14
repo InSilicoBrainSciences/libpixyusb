@@ -1,8 +1,9 @@
+#include <map>
 #include <stdio.h>
 #include "pixy.h"
 #include "pixyinterpreter.hpp"
 
-PixyInterpreter interpreter;
+std::map<int, PixyInterpreter> interpreter;
 
 /** 
 
@@ -79,57 +80,83 @@ extern "C"
     { PIXY_ERROR_USB_NOT_FOUND,   "USB Error: Target not found" },
     { PIXY_ERROR_CHIRP,           "Chirp Protocol Error" },
     { PIXY_ERROR_INVALID_COMMAND, "Pixy Error: Invalid command" },
+    { PIXY_ERROR_INVALID_ID,      "Pixy Error: Inavlid ID" },
     { 0,                          0 }
   };
 
   static int pixy_initialized = false;
 
-  int pixy_init()
+  int pixy_init(int pixy_id)
   {
+    // TODO: Determine if this is the right set of error codes.
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      return PIXY_ERROR_INVALID_ID;  
+    }
+
     int return_value;
 
-    return_value = interpreter.init();
+    interpreter[pixy_id] = PixyInterpreter();
+    return_value = interpreter[pixy_id].init();
 
-    if(return_value == 0) 
+    // TODO: Determine if I need to check if the pixy has been initialized.
+    if(return_value != 0) 
     {
-      pixy_initialized = true;
+      interpreter.erase(pixy_id);
     }
 
     return return_value;
   }
 
-  int pixy_get_blocks(uint16_t max_blocks, struct Block * blocks)
+  int pixy_get_blocks(int pixy_id, uint16_t max_blocks, struct Block * blocks)
   {
-    return interpreter.get_blocks(max_blocks, blocks);
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      return interpreter[pixy_id].get_blocks(max_blocks, blocks);
+    } else {
+      // TODO: Determine the correct error code to return.
+      return -1;
+    }
   }
 
-  int pixy_blocks_are_new()
+  int pixy_blocks_are_new(int pixy_id)
   {
-    return interpreter.blocks_are_new();
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      return interpreter[pixy_id].blocks_are_new();
+    } else {
+      // TODO: Determine the correct error code to return.
+      return -1;
+    }
   }
 
-  int pixy_command(const char *name, ...)
+  int pixy_command(int pixy_id, const char *name, ...)
   {
-    va_list arguments;
-    int     return_value;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      va_list arguments;
+      int     return_value;
 
-    if(!pixy_initialized) return -1;
+      if(!pixy_initialized) return -1;
 
-    va_start(arguments, name);
-    return_value = interpreter.send_command(name, arguments);
-    va_end(arguments);
+      va_start(arguments, name);
+      return_value = interpreter[pixy_id].send_command(name, arguments);
+      va_end(arguments);
 
-    return return_value;
+      return return_value;
+    } else {
+      // TODO: Determine the correct error code to return.
+      return -1;
+    }
   }
 
-  void pixy_close()
+  void pixy_close(int pixy_id)
   {
-    if(!pixy_initialized) return;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      if(!pixy_initialized) return;
 
-    interpreter.close();
+      interpreter[pixy_id].close();
+      interpreter.erase(pixy_id);
+    }
   }
 
-  void pixy_error(int error_code)
+  void pixy_error(int pixy_id, int error_code)
   {
     int index;
 
@@ -140,318 +167,399 @@ extern "C"
     while(PIXY_ERROR_TABLE[index].text != 0) {
 
       if(PIXY_ERROR_TABLE[index].error == error_code) {
-        printf("%s\n", PIXY_ERROR_TABLE[index].text);
+        printf("(Pixy ID: %d) %s\n", pixy_id, PIXY_ERROR_TABLE[index].text);
         return;
       }
 
       index += 1;
     }
 
-    printf("Undefined error: [%d]\n", error_code);
+    printf("(Pixy ID: %d) Undefined error: [%d]\n", error_code);
   }
 
-  int pixy_led_set_RGB(uint8_t red, uint8_t green, uint8_t blue)
+  int pixy_led_set_RGB(int pixy_id, uint8_t red, uint8_t green, uint8_t blue)
   {
-    int      chirp_response;
-    int      return_value;
-    uint32_t RGB;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int      chirp_response;
+      int      return_value;
+      uint32_t RGB;
 
-    // Pack the RGB value //
-    RGB = blue + (green << 8) + (red << 16);
+      // Pack the RGB value //
+      RGB = blue + (green << 8) + (red << 16);
 
-    return_value = pixy_command("led_set", INT32(RGB), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "led_set", INT32(RGB), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-   if (return_value < 0) {
-      // Error //
-      return return_value;
+     if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_led_set_max_current(uint32_t current)
+  int pixy_led_set_max_current(int pixy_id, uint32_t current)
   {
-    int chirp_response;
-    int return_value;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int chirp_response;
+      int return_value;
 
-    return_value = pixy_command("led_setMaxCurrent", INT32(current), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "led_setMaxCurrent", INT32(current), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-   if (return_value < 0) {
-      // Error //
-      return return_value;
+     if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_led_get_max_current()
+  int pixy_led_get_max_current(int pixy_id)
   {
-    int      return_value;
-    uint32_t chirp_response;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int      return_value;
+      uint32_t chirp_response;
 
-    return_value = pixy_command("led_getMaxCurrent", END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "led_getMaxCurrent", END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-    if (return_value < 0) {
-      // Error //
-      return return_value;
+      if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_cam_set_auto_white_balance(uint8_t enable)
+  int pixy_cam_set_auto_white_balance(int pixy_id, uint8_t enable)
   {
-    int      return_value;
-    uint32_t chirp_response;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int      return_value;
+      uint32_t chirp_response;
 
-    return_value = pixy_command("cam_setAWB", UINT8(enable), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "cam_setAWB", UINT8(enable), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-   if (return_value < 0) {
-      // Error //
-      return return_value;
+     if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_cam_get_auto_white_balance()
+  int pixy_cam_get_auto_white_balance(int pixy_id)
   {
-    int      return_value;
-    uint32_t chirp_response;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int      return_value;
+      uint32_t chirp_response;
 
-    return_value = pixy_command("cam_getAWB", END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "cam_getAWB", END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-    if (return_value < 0) {
-      // Error //
-      return return_value;
+      if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  uint32_t pixy_cam_get_white_balance_value()
+  uint32_t pixy_cam_get_white_balance_value(int pixy_id)
   {
-    int      return_value;
-    uint32_t chirp_response;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int      return_value;
+      uint32_t chirp_response;
 
-    return_value = pixy_command("cam_getWBV", END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "cam_getWBV", END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-   if (return_value < 0) {
-      // Error //
-      return return_value;
+     if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_cam_set_white_balance_value(uint8_t red, uint8_t green, uint8_t blue)
+  int pixy_cam_set_white_balance_value(int pixy_id, uint8_t red, uint8_t green, uint8_t blue)
   {
-    int      return_value;
-    uint32_t chirp_response;
-    uint32_t white_balance;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int      return_value;
+      uint32_t chirp_response;
+      uint32_t white_balance;
 
-    white_balance = green + (red << 8) + (blue << 16);
+      white_balance = green + (red << 8) + (blue << 16);
 
-    return_value = pixy_command("cam_setAWB", UINT32(white_balance), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "cam_setAWB", UINT32(white_balance), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-   if (return_value < 0) {
-      // Error //
-      return return_value;
-    } else {
-      // Success //
-      return chirp_response;
-    }
+     if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
   }
 
-  int pixy_cam_set_auto_exposure_compensation(uint8_t enable)
+  int pixy_cam_set_auto_exposure_compensation(int pixy_id, uint8_t enable)
   {
-    int      return_value;
-    uint32_t chirp_response;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int      return_value;
+      uint32_t chirp_response;
 
-    return_value = pixy_command("cam_setAEC", UINT8(enable), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "cam_setAEC", UINT8(enable), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-   if (return_value < 0) {
-      // Error //
-      return return_value;
+      if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
-}
+  }
   
-  int pixy_cam_get_auto_exposure_compensation()
+  int pixy_cam_get_auto_exposure_compensation(int pixy_id)
   {
-    int      return_value;
-    uint32_t chirp_response;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int      return_value;
+      uint32_t chirp_response;
 
-    return_value = pixy_command("cam_getAEC", END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "cam_getAEC", END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-    if (return_value < 0) {
-      // Error //
-      return return_value;
+      if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_cam_set_exposure_compensation(uint8_t gain, uint16_t compensation)
+  int pixy_cam_set_exposure_compensation(int pixy_id, uint8_t gain, uint16_t compensation)
   {
-    int      return_value;
-    uint32_t chirp_response;
-    uint32_t exposure;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int      return_value;
+      uint32_t chirp_response;
+      uint32_t exposure;
 
-    exposure = gain + (compensation << 8);
+      exposure = gain + (compensation << 8);
 
-    return_value = pixy_command("cam_setECV", UINT32(exposure), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "cam_setECV", UINT32(exposure), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-   if (return_value < 0) {
-      // Error //
-      return return_value;
+      if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_cam_get_exposure_compensation(uint8_t * gain, uint16_t * compensation)
+  int pixy_cam_get_exposure_compensation(int pixy_id, uint8_t * gain, uint16_t * compensation)
   {
-    uint32_t exposure;
-    int      return_value;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      uint32_t exposure;
+      int      return_value;
 
-    return_value = pixy_command("cam_getECV", END_OUT_ARGS, &exposure, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "cam_getECV", END_OUT_ARGS, &exposure, END_IN_ARGS);
 
-    if (return_value < 0) {
-      // Chirp error //
-      return return_value;
-    }
+      if (return_value < 0) {
+        // Chirp error //
+        return return_value;
+      }
 
-    if(gain == 0 || compensation == 0) {
-      // Error: Null pointer //
-      return PIXY_ERROR_INVALID_PARAMETER;
-    }
+      if(gain == 0 || compensation == 0) {
+        // Error: Null pointer //
+        return PIXY_ERROR_INVALID_PARAMETER;
+      }
 
-    printf("exp:%08x\n", exposure);
+      printf("exp:%08x\n", exposure);
 
-    *gain         = exposure & 0xFF;
-    *compensation = 0xFFFF & (exposure >> 8);
+      *gain         = exposure & 0xFF;
+      *compensation = 0xFFFF & (exposure >> 8);
 
-    return 0;
-  }
-
-  int pixy_cam_set_brightness(uint8_t brightness)
-  {
-    int chirp_response;
-    int return_value;
-
-    return_value = pixy_command("cam_setBrightness", UINT8(brightness), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
-
-   if (return_value < 0) {
-      // Error //
-      return return_value;
+      return 0;
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_cam_get_brightness()
+  int pixy_cam_set_brightness(int pixy_id, uint8_t brightness)
   {
-    int chirp_response;
-    int return_value;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int chirp_response;
+      int return_value;
 
-    return_value = pixy_command("cam_getBrightness", END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "cam_setBrightness", UINT8(brightness), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-    if (return_value < 0) {
-      // Error //
-      return return_value;
+     if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_rcs_get_position(uint8_t channel)
+  int pixy_cam_get_brightness(int pixy_id)
   {
-    int chirp_response;
-    int return_value;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int chirp_response;
+      int return_value;
 
-    return_value = pixy_command("rcs_getPos", UINT8(channel), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "cam_getBrightness", END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-    if (return_value < 0) {
-      // Error //
-      return return_value;
+      if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_rcs_set_position(uint8_t channel, uint16_t position)
+  int pixy_rcs_get_position(int pixy_id, uint8_t channel)
   {
-    int chirp_response;
-    int return_value;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int chirp_response;
+      int return_value;
 
-    return_value = pixy_command("rcs_setPos", UINT8(channel), INT16(position), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "rcs_getPos", UINT8(channel), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-   if (return_value < 0) {
-      // Error //
-      return return_value;
+      if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_rcs_set_frequency(uint16_t frequency)
+  int pixy_rcs_set_position(int pixy_id, uint8_t channel, uint16_t position)
   {
-    int chirp_response;
-    int return_value;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int chirp_response;
+      int return_value;
 
-    return_value = pixy_command("rcs_setFreq", UINT16(frequency), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+      return_value = pixy_command(pixy_id, "rcs_setPos", UINT8(channel), INT16(position), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
 
-   if (return_value < 0) {
-      // Error //
-      return return_value;
+      if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
     } else {
-      // Success //
-      return chirp_response;
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
   }
 
-  int pixy_get_firmware_version(uint16_t * major, uint16_t * minor, uint16_t * build)
+  int pixy_rcs_set_frequency(int pixy_id, uint16_t frequency)
   {
-    uint16_t * pixy_version;
-    uint32_t   version_length;
-    uint32_t   response;
-    uint16_t   version[3];
-    int        return_value;
-    int        chirp_response;
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      int chirp_response;
+      int return_value;
 
-    if(major == 0 || minor == 0 || build == 0) {
-      // Error: Null pointer //
-      return PIXY_ERROR_INVALID_PARAMETER;
+      return_value = pixy_command(pixy_id, "rcs_setFreq", UINT16(frequency), END_OUT_ARGS, &chirp_response, END_IN_ARGS);
+
+      if (return_value < 0) {
+        // Error //
+        return return_value;
+      } else {
+        // Success //
+        return chirp_response;
+      }
+    } else {
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
+  }
 
-    return_value = pixy_command("version",  END_OUT_ARGS, &response, &version_length, &pixy_version, END_IN_ARGS);
+  int pixy_get_firmware_version(int pixy_id, uint16_t * major, uint16_t * minor, uint16_t * build)
+  {
+    if (interpreter.find(pixy_id) != interpreter.cend()) {
+      uint16_t * pixy_version;
+      uint32_t   version_length;
+      uint32_t   response;
+      uint16_t   version[3];
+      int        return_value;
+      int        chirp_response;
 
-    if (return_value < 0) {
-      // Error //
-      return return_value;
+      if(major == 0 || minor == 0 || build == 0) {
+        // Error: Null pointer //
+        return PIXY_ERROR_INVALID_PARAMETER;
+      }
+
+      return_value = pixy_command(pixy_id, "version",  END_OUT_ARGS, &response, &version_length, &pixy_version, END_IN_ARGS);
+
+      if (return_value < 0) {
+        // Error //
+        return return_value;
+      }
+
+      memcpy((void *) version, pixy_version, 3 * sizeof(uint16_t));
+
+      *major = version[0];
+      *minor = version[1];
+      *build = version[2];
+
+      return 0;
+    } else {
+      // TODO: Determine the correct error code to return.
+      return -1;
     }
-
-    memcpy((void *) version, pixy_version, 3 * sizeof(uint16_t));
-
-    *major = version[0];
-    *minor = version[1];
-    *build = version[2];
-
-    return 0;
   }
 }

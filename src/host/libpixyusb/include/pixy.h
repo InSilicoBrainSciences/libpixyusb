@@ -85,8 +85,9 @@ extern "C"
     @return  PIXY_ERROR_NOT_FOUND      USB Error: Pixy not found
     @return  PIXY_ERROR_USB_BUSY       USB Error: Busy
     @return  PIXY_ERROR_USB_NO_DEVICE  USB Error: No device
+    @return  PIXY_ERROR_INVALID_ID     ID Error: Invalid ID
   */
-  int pixy_init();
+  int pixy_init(int pixy_id);
 
   /**
     @brief      Indicates when new block data from Pixy is received.
@@ -94,8 +95,9 @@ extern "C"
     @return  1  New Data:   Block data has been updated.
     @return  0  Stale Data: Block data has not changed since pixy_get_blocks() was
                             last called.
+    @return  -1 Invalid Pixy ID: The given pixy_id doesn't exist.
   */
-  int pixy_blocks_are_new();
+  int pixy_blocks_are_new(int pixy_id);
 
   /**
     @brief      Copies up to 'max_blocks' number of Blocks to the address pointed
@@ -111,8 +113,9 @@ extern "C"
     @return  PIXY_ERROR_USB_BUSY           USB Error: Busy
     @return  PIXY_ERROR_USB_NO_DEVICE      USB Error: No device
     @return  PIXY_ERROR_INVALID_PARAMETER  Invalid pararmeter specified
+    @return  PIXY_ERROR_INVALID_ID         ID Error: Invalid ID
   */
-  int pixy_get_blocks(uint16_t max_blocks, struct Block * blocks);
+  int pixy_get_blocks(int pixy_id, uint16_t max_blocks, struct Block * blocks);
 
   /**
     @brief      Send a command to Pixy.
@@ -120,18 +123,18 @@ extern "C"
     @return     -1    Error
 
   */
-  int pixy_command(const char *name, ...);
+  int pixy_command(int pixy_id, const char *name, ...);
 
   /**
     @brief Terminates connection with Pixy.
   */
-  void pixy_close();
+  void pixy_close(int pixy_id);
 
   /**
     @brief Send description of pixy error to stdout.
     @param[in] error_code  Pixy error code
   */
-  void pixy_error(int error_code);
+  void pixy_error(int pixy_id, int error_code);
 
   /**
     @brief  Set color of pixy LED.
@@ -141,7 +144,7 @@ extern "C"
     @return     0         Success
     @return     Negative  Error
   */
-  int pixy_led_set_RGB(uint8_t red, uint8_t green, uint8_t blue);
+  int pixy_led_set_RGB(int pixy_id, uint8_t red, uint8_t green, uint8_t blue);
 
   /**
     @brief  Set pixy LED maximum current.
@@ -149,14 +152,14 @@ extern "C"
     @return     0         Success
     @return     Negative  Error
   */
-  int pixy_led_set_max_current(uint32_t current);
+  int pixy_led_set_max_current(int pixy_id, uint32_t current);
 
   /**
     @brief   Get pixy LED maximum current.
     @return     Non-negative Maximum LED current value (microamps).
     @return     Negative     Error
   */
-  int pixy_led_get_max_current();
+  int pixy_led_get_max_current(int pixy_id);
 
   /**
     @brief    Enable or disable pixy camera auto white balance.
@@ -165,7 +168,7 @@ extern "C"
     @return     0         Success
     @return     Negative  Error
   */
-  int pixy_cam_set_auto_white_balance(uint8_t value);
+  int pixy_cam_set_auto_white_balance(int pixy_id, uint8_t value);
 
   /**
     @brief    Get pixy camera auto white balance setting.
@@ -173,14 +176,14 @@ extern "C"
     @return     0         Auto white balance is disabled.
     @return     Negative  Error
   */
-  int pixy_cam_get_auto_white_balance();
+  int pixy_cam_get_auto_white_balance(int pixy_id);
 
   /**
     @brief   Get pixy camera white balance()
     @return  Composite value for RGB white balance:
              white balance = green_value + (red_value << 8) + (blue << 16)
   */
-  uint32_t pixy_cam_get_white_balance_value();
+  uint32_t pixy_cam_get_white_balance_value(int pixy_id);
 
   /**
     @brief     Set pixy camera white balance.
@@ -190,7 +193,7 @@ extern "C"
     @return     0         Success
     @return     Negative  Error
   */
-  int pixy_cam_set_white_balance_value(uint8_t red, uint8_t green, uint8_t blue);
+  int pixy_cam_set_white_balance_value(int pixy_id, uint8_t red, uint8_t green, uint8_t blue);
 
   /**
     @brief     Enable or disable pixy camera auto exposure compensation.
@@ -199,7 +202,7 @@ extern "C"
     @return     0         Success
     @return     Negative  Error
   */
-  int pixy_cam_set_auto_exposure_compensation(uint8_t enable);
+  int pixy_cam_set_auto_exposure_compensation(int pixy_id, uint8_t enable);
 
   /**
     @brief     Get pixy camera auto exposure compensation setting.
@@ -207,7 +210,7 @@ extern "C"
     @return     0         Auto exposure compensation disabled.
     @return     Negative  Error
   */
-  int pixy_cam_get_auto_exposure_compensation();
+  int pixy_cam_get_auto_exposure_compensation(int pixy_id);
 
   /**
     @brief     Set pixy camera exposure compensation.
@@ -216,7 +219,7 @@ extern "C"
     @return     0         Success
     @return     Negative  Error
   */
-  int pixy_cam_set_exposure_compensation(uint8_t gain, uint16_t compensation);
+  int pixy_cam_set_exposure_compensation(int pixy_id, uint8_t gain, uint16_t compensation);
 
   /**
     @brief     Get pixy camera exposure compensation.
@@ -225,7 +228,7 @@ extern "C"
     @return     0         Success
     @return     Negative  Error
   */
-  int pixy_cam_get_exposure_compensation(uint8_t * gain, uint16_t * compensation);
+  int pixy_cam_get_exposure_compensation(int pixy_id, uint8_t * gain, uint16_t * compensation);
 
   /**
     @brief     Set pixy camera brightness.
@@ -233,14 +236,14 @@ extern "C"
     @return     0         Success
     @return     Negative  Error
   */
-  int pixy_cam_set_brightness(uint8_t brightness);
+  int pixy_cam_set_brightness(int pixy_id, uint8_t brightness);
 
   /**
     @brief     Get pixy camera brightness.
     @return     Non-negative Brightness value.
     @return     Negative     Error
   */
-  int pixy_cam_get_brightness();
+  int pixy_cam_get_brightness(int pixy_id);
 
   /**
     @brief     Get pixy servo axis position.
@@ -248,7 +251,7 @@ extern "C"
     @return     Position of channel. Range: [0, 999]
     @return     Negative  Error
   */
-  int pixy_rcs_get_position(uint8_t channel);
+  int pixy_rcs_get_position(int pixy_id, uint8_t channel);
 
   /**
     @brief     Set pixy servo axis position.
@@ -257,13 +260,13 @@ extern "C"
     @return      0         Success
     @return      Negative  Error
   */
-  int pixy_rcs_set_position(uint8_t channel, uint16_t position);
+  int pixy_rcs_set_position(int pixy_id, uint8_t channel, uint16_t position);
 
   /**
     @brief     Set pixy servo pulse width modulation (PWM) frequency.
     @param     frequency Range: [20, 300] Hz Default: 50 Hz
   */
-  int pixy_rcs_set_frequency(uint16_t frequency);
+  int pixy_rcs_set_frequency(int pixy_id, uint16_t frequency);
 
   /**
     @brief    Get pixy firmware version.
@@ -273,7 +276,7 @@ extern "C"
     @return      0         Success
     @return      Negative  Error
   */
-  int pixy_get_firmware_version(uint16_t * major, uint16_t * minor, uint16_t * build);
+  int pixy_get_firmware_version(int pixy_id, uint16_t * major, uint16_t * minor, uint16_t * build);
 
 
 #ifdef __cplusplus

@@ -20,6 +20,7 @@
 #include <string.h>
 #include "pixy.h"
 
+#define PIXY_ID              0
 #define BLOCK_BUFFER_SIZE    25
 
 // Pixy Block buffer // 
@@ -48,14 +49,14 @@ int main(int argc, char * argv[])
   printf("Hello Pixy:\n libpixyusb Version: %s\n", __LIBPIXY_VERSION__);
 
   // Connect to Pixy //
-  pixy_init_status = pixy_init();
+  pixy_init_status = pixy_init(PIXY_ID);
 
   // Was there an error initializing pixy? //
   if(!pixy_init_status == 0)
   {
     // Error initializing Pixy //
     printf("pixy_init(): ");
-    pixy_error(pixy_init_status);
+    pixy_error(PIXY_ID, pixy_init_status);
 
     return pixy_init_status;
   }
@@ -67,7 +68,7 @@ int main(int argc, char * argv[])
     uint16_t build;
     int      return_value;
 
-    return_value = pixy_get_firmware_version(&major, &minor, &build);
+    return_value = pixy_get_firmware_version(PIXY_ID, &major, &minor, &build);
 
     if (return_value) {
       // Error //
@@ -127,12 +128,12 @@ int main(int argc, char * argv[])
     while(!pixy_blocks_are_new() && run_flag); 
 
     // Get blocks from Pixy //
-    blocks_copied = pixy_get_blocks(BLOCK_BUFFER_SIZE, &blocks[0]);
+    blocks_copied = pixy_get_blocks(PIXY_ID, BLOCK_BUFFER_SIZE, &blocks[0]);
 
     if(blocks_copied < 0) {
       // Error: pixy_get_blocks //
       printf("pixy_get_blocks(): ");
-      pixy_error(blocks_copied);
+      pixy_error(PIXY_ID, blocks_copied);
     }
 
     // Display received blocks //
@@ -143,5 +144,5 @@ int main(int argc, char * argv[])
     }
     i++;
   }
-  pixy_close();
+  pixy_close(PIXY_ID);
 }
