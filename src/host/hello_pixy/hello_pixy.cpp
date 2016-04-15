@@ -52,7 +52,7 @@ int main(int argc, char * argv[])
   pixy_init_status = pixy_init(PIXY_ID);
 
   // Was there an error initializing pixy? //
-  if(!pixy_init_status == 0)
+  if(pixy_init_status != 0)
   {
     // Error initializing Pixy //
     printf("pixy_init(): ");
@@ -73,7 +73,7 @@ int main(int argc, char * argv[])
     if (return_value) {
       // Error //
       printf("Failed to retrieve Pixy firmware version. ");
-      pixy_error(return_value);
+      pixy_error(PIXY_ID, return_value);
 
       return return_value;
     } else {
@@ -125,7 +125,7 @@ int main(int argc, char * argv[])
   while(run_flag)
   {
     // Wait for new blocks to be available //
-    while(!pixy_blocks_are_new() && run_flag); 
+    while(!pixy_blocks_are_new(PIXY_ID) && run_flag); 
 
     // Get blocks from Pixy //
     blocks_copied = pixy_get_blocks(PIXY_ID, BLOCK_BUFFER_SIZE, &blocks[0]);

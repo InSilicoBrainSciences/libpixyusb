@@ -1,9 +1,13 @@
-#include <map>
+#include <utility>
+#include <boost/container/map.hpp>
 #include <stdio.h>
 #include "pixy.h"
 #include "pixyinterpreter.hpp"
 
-std::map<int, PixyInterpreter> interpreter;
+using std::make_pair;
+using boost::container::map;
+
+map<int, PixyInterpreter> interpreter;
 
 /** 
 
@@ -95,7 +99,7 @@ extern "C"
 
     int return_value;
 
-    interpreter[pixy_id] = PixyInterpreter();
+    interpreter.emplace(pixy_id, PixyInterpreter());
     return_value = interpreter[pixy_id].init();
 
     // TODO: Determine if I need to check if the pixy has been initialized.
@@ -174,7 +178,7 @@ extern "C"
       index += 1;
     }
 
-    printf("(Pixy ID: %d) Undefined error: [%d]\n", error_code);
+    printf("(Pixy ID: %d) Undefined error: [%d]\n", pixy_id, error_code);
   }
 
   int pixy_led_set_RGB(int pixy_id, uint8_t red, uint8_t green, uint8_t blue)
@@ -325,6 +329,10 @@ extern "C"
         // Success //
         return chirp_response;
       }
+    } else {
+      // TODO: Determine the correct error code to return.
+      return -1;
+    }
   }
 
   int pixy_cam_set_auto_exposure_compensation(int pixy_id, uint8_t enable)
