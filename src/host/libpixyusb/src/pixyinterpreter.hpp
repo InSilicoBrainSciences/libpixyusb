@@ -33,7 +33,6 @@ class PixyInterpreter : public Interpreter
 
     PixyInterpreter();
     ~PixyInterpreter();
-    PixyInterpreter(const PixyInterpreter& pixy_interpreter) {};
 
     /**
       @brief  Spawns an 'interpreter' thread which attempts to 

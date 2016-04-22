@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include <boost/container/set.hpp>
 #include <unistd.h>
 #include <stdio.h>
 #include "usblink.h"
@@ -20,86 +21,104 @@
 #include "utils/timer.hpp"
 #include "debuglog.h"
 
+boost::container::set<uint8_t> USBLink::devices_in_use_;
+
 USBLink::USBLink()
 {
-  m_handle = 0;
-  m_context = 0;
-  m_blockSize = 64;
-  m_flags = LINK_FLAG_ERROR_CORRECTED;
+    open_ = false;
+    device_address_ = 0;
+    m_handle = 0;
+    m_context = 0;
+    m_blockSize = 64;
+    m_flags = LINK_FLAG_ERROR_CORRECTED;
 }
 
 USBLink::~USBLink()
 {
-  if (m_handle)
-    libusb_close(m_handle);
-  if (m_context)
-    libusb_exit(m_context);
+    close();
 }
 
 int USBLink::open()
 {
-  int return_value;
+    close();
+
+    libusb_init(&m_context);
+
+    return openDevice();
+}
+
+void USBLink::close()
+{
+    if (m_handle)
+    {
+        libusb_close(m_handle);
+        m_handle = 0;
+    }
+    if (m_context)
+    {
+        libusb_exit(m_context);
+        m_context = 0;
+    }
+    if (open_) {
+      devices_in_use_.erase(device_address_);
+    }
+    device_address_ = 0;
+    open_ = false;
+}
+
+int USBLink::openDevice()
+{
+    libusb_device **list = NULL;
+    int i, count = 0;
+    libusb_device *device;
+    libusb_device_descriptor desc;
+
 #ifdef __MACOS__
-  const unsigned int MILLISECONDS_TO_SLEEP = 100;
+    const unsigned int MILLISECONDS_TO_SLEEP = 100;
 #endif
 
-  log("pixydebug: USBLink::open()\n");
+    count = libusb_get_device_list(m_context, &list);
 
-  return_value = libusb_init(&m_context);
-  log("pixydebug:  libusb_init() = %d\n", return_value);
+    for (i=0; i<count; i++)
+    {
+        device = list[i];
+        libusb_get_device_descriptor(device, &desc);
+        const uint8_t device_address = libusb_get_device_address(device);
 
-  if (return_value) {
-    goto usblink_open__exit;
-  }
+        fprintf(stderr, "Scanning device number %d with address %u\n",
+                count, device_address);
 
-  m_handle = libusb_open_device_with_vid_pid(m_context, PIXY_VID, PIXY_PID);
-  log("pixydebug:  libusb_open_device_with_vid_pid() = %d\n", m_handle);
-
-  if (m_handle == NULL) {
-    return_value = PIXY_ERROR_USB_NOT_FOUND;
-
-    goto usblink_open__exit;
-  }
-
-#ifdef __MACOS__
-  return_value = libusb_reset_device(m_handle);
-  log("pixydebug:  libusb_reset_device() = %d\n", return_value);
-  usleep(MILLISECONDS_TO_SLEEP * 1000);
-#endif
-
-  return_value = libusb_set_configuration(m_handle, 1);
-  log("pixydebug:  libusb_set_configuration() = %d\n", return_value);
-
-  if (return_value < 0) {
-    goto usblink_open__close_and_exit;
-  }
-
-  return_value = libusb_claim_interface(m_handle, 1);
-  log("pixydebug:  libusb_claim_interface() = %d\n", return_value);
-
-  if (return_value < 0) {
-    goto usblink_open__close_and_exit;
-  }
-
+        if (desc.idVendor==PIXY_VID && desc.idProduct==PIXY_PID)
+        {
+            if (libusb_open(device, &m_handle)==0)
+            {
+            #ifdef __MACOS__
+                libusb_reset_device(m_handle);
+                usleep(MILLISECONDS_TO_SLEEP * 1000);
+            #endif
+                if ((devices_in_use_.find(device_address) != devices_in_use_.cend()) ||
+                    (libusb_set_configuration(m_handle, 1) < 0) ||
+                    (libusb_claim_interface(m_handle, 1) < 0)) {
+                    libusb_close(m_handle);
+                    m_handle = 0;
+                    continue;
+                }
 #ifdef __LINUX__
-  return_value = libusb_reset_device(m_handle);
-  log("pixydebug:  libusb_reset_device() = %d\n", return_value);
+                libusb_reset_device(m_handle);
 #endif
-
-  /* Success */
-  return_value = 0;
-  goto usblink_open__exit;
-
-usblink_open__close_and_exit:
-  /* Cleanup after error */
-
-  libusb_close(m_handle);
-  m_handle = 0;
-
-usblink_open__exit:
-  log("pixydebug: USBLink::open() returned %d\n", return_value);
-
-  return return_value;
+                devices_in_use_.insert(device_address);
+                device_address_ = device_address;
+                fprintf(stderr, "Success! :)\n");
+                break;
+            }
+        }
+    }
+    libusb_free_device_list(list, 1);
+    if (i==count) { // no devices found
+        fprintf(stderr, "No devices found :(\n");
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -107,15 +126,12 @@ usblink_open__exit:
 int USBLink::send(const uint8_t *data, uint32_t len, uint16_t timeoutMs)
 {
     int res, transferred;
-    
-    log("pixydebug: USBLink::send()\n");
 
     if (timeoutMs==0) // 0 equals infinity
         timeoutMs = 10;
 
     if ((res=libusb_bulk_transfer(m_handle, 0x02, (unsigned char *)data, len, &transferred, timeoutMs))<0)
     {
-        log("pixydebug:  libusb_bulk_transfer() = %d\n", res);
 #ifdef __MACOS__
         libusb_clear_halt(m_handle, 0x02);
 #endif
@@ -131,32 +147,31 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 {
     int res, transferred;
 
-    log("pixydebug: USBLink::receive()\n");
-
     if (timeoutMs==0) // 0 equals infinity
         timeoutMs = 50;
 
+    // Note: if this call is taking more time than than expected, check to see if we're connected as USB 2.0.  Bad USB cables can
+    // cause us to revert to a 1.0 connection.
     if ((res=libusb_bulk_transfer(m_handle, 0x82, (unsigned char *)data, len, &transferred, timeoutMs))<0)
     {
-        log("pixydebug:  libusb_bulk_transfer() = %d\n", res);
+        log("pixydebug: libusb_bulk_transfer() = %d\n", res);
 #ifdef __MACOS__
         libusb_clear_halt(m_handle, 0x82);
 #endif
         return res;
     }
-    
-    log("pixydebug:  libusb_bulk_transfer(%d bytes) = %d\n", len, res);
-    log("pixydebug: USBLink::receive() returned %d (bytes transferred)\n", transferred);
     return transferred;
 }
 
 void USBLink::setTimer()
 {
-  timer_.reset();
+    timer_.reset();
 }
 
 uint32_t USBLink::getTimer()
 {
-  return timer_.elapsed();
+    return timer_.elapsed();
 }
+
+
 

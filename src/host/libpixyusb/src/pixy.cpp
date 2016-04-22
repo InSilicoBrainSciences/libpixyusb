@@ -1,14 +1,16 @@
 #include <utility>
-#include <boost/container/map.hpp>
 #include <stdio.h>
+#include <boost/container/map.hpp>
+#include <boost/shared_ptr.hpp>
 #include "pixy.h"
 #include "pixydebug.h"
 #include "pixyinterpreter.hpp"
 
 using std::make_pair;
 using boost::container::map;
+using boost::shared_ptr;
 
-map<int, PixyInterpreter> interpreter;
+map<int, shared_ptr<PixyInterpreter> > interpreter;
 
 /** 
 
@@ -94,23 +96,23 @@ extern "C"
   int pixy_init(int pixy_id)
   {
     // PIXYDEBUG("Entering pixy_init\n");
-    printf("Entering pixy_init\n");
+    fprintf(stderr, "Entering pixy_init\n");
     // TODO: Determine if this is the right set of error codes.
     if (interpreter.find(pixy_id) != interpreter.cend()) {
-      printf("Existing interpreter found for pixy with id %d\n", pixy_id);
+      fprintf(stderr, "Existing interpreter found for pixy with id %d\n", pixy_id);
       return PIXY_ERROR_INVALID_ID;  
     }
 
     int return_value;
 
-    printf("Generating new interpreter for pixy with id %d\n", pixy_id);
-    interpreter.emplace(pixy_id, PixyInterpreter());
-    return_value = interpreter[pixy_id].init();
+    fprintf(stderr, "Generating new interpreter for pixy with id %d\n", pixy_id);
+    interpreter.emplace(pixy_id, shared_ptr<PixyInterpreter>(new PixyInterpreter));
+    return_value = interpreter[pixy_id]->init();
 
     // TODO: Determine if I need to check if the pixy has been initialized.
     if(return_value != 0) 
     {
-      printf("Could not initialize interpreter for pixy with id %d\n", pixy_id);
+      fprintf(stderr, "Could not initialize interpreter for pixy with id %d\n", pixy_id);
       interpreter.erase(pixy_id);
     }
 
@@ -120,7 +122,7 @@ extern "C"
   int pixy_get_blocks(int pixy_id, uint16_t max_blocks, struct Block * blocks)
   {
     if (interpreter.find(pixy_id) != interpreter.cend()) {
-      return interpreter[pixy_id].get_blocks(max_blocks, blocks);
+      return interpreter[pixy_id]->get_blocks(max_blocks, blocks);
     } else {
       // TODO: Determine the correct error code to return.
       return -1;
@@ -130,7 +132,7 @@ extern "C"
   int pixy_blocks_are_new(int pixy_id)
   {
     if (interpreter.find(pixy_id) != interpreter.cend()) {
-      return interpreter[pixy_id].blocks_are_new();
+      return interpreter[pixy_id]->blocks_are_new();
     } else {
       // TODO: Determine the correct error code to return.
       return -1;
@@ -146,7 +148,7 @@ extern "C"
       // if(!pixy_initialized) return -1;
 
       va_start(arguments, name);
-      return_value = interpreter[pixy_id].send_command(name, arguments);
+      return_value = interpreter[pixy_id]->send_command(name, arguments);
       va_end(arguments);
 
       return return_value;
@@ -161,7 +163,7 @@ extern "C"
     if (interpreter.find(pixy_id) != interpreter.cend()) {
       // if(!pixy_initialized) return;
 
-      interpreter[pixy_id].close();
+      interpreter[pixy_id]->close();
       interpreter.erase(pixy_id);
     }
   }
@@ -177,14 +179,14 @@ extern "C"
     while(PIXY_ERROR_TABLE[index].text != 0) {
 
       if(PIXY_ERROR_TABLE[index].error == error_code) {
-        printf("(Pixy ID: %d) %s\n", pixy_id, PIXY_ERROR_TABLE[index].text);
+        fprintf(stderr, "(Pixy ID: %d) %s\n", pixy_id, PIXY_ERROR_TABLE[index].text);
         return;
       }
 
       index += 1;
     }
 
-    printf("(Pixy ID: %d) Undefined error: [%d]\n", pixy_id, error_code);
+    fprintf(stderr, "(Pixy ID: %d) Undefined error: [%d]\n", pixy_id, error_code);
   }
 
   int pixy_led_set_RGB(int pixy_id, uint8_t red, uint8_t green, uint8_t blue)
@@ -425,7 +427,7 @@ extern "C"
         return PIXY_ERROR_INVALID_PARAMETER;
       }
 
-      printf("exp:%08x\n", exposure);
+      fprintf(stderr, "exp:%08x\n", exposure);
 
       *gain         = exposure & 0xFF;
       *compensation = 0xFFFF & (exposure >> 8);

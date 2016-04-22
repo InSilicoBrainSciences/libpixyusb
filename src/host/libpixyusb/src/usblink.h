@@ -13,10 +13,11 @@
 // end license header
 //
 
-#ifndef __USBLINK_H__
-#define __USBLINK_H__
+#ifndef _USBLINK_H
+#define _USBLINK_H
 
-#include "link.h"
+#include <boost/container/set.hpp>
+#include <link.h>
 #include "utils/timer.hpp"
 #include "libusb.h"
 
@@ -24,20 +25,25 @@ class USBLink : public Link
 {
 public:
     USBLink();
-    ~USBLink();
+    virtual ~USBLink();
 
     int open();
+    void close();
     virtual int send(const uint8_t *data, uint32_t len, uint16_t timeoutMs);
     virtual int receive(uint8_t *data, uint32_t len, uint16_t timeoutMs);
     virtual void setTimer();
     virtual uint32_t getTimer();
 
 private:
+    // Stores the device addresses of those in use.
+    static boost::container::set<uint8_t> devices_in_use_;
+    
+    int openDevice();
     libusb_context *m_context;
     libusb_device_handle *m_handle;
-
     util::timer timer_;
+    uint8_t device_address_;
+    bool open_;
 };
-
 #endif
 

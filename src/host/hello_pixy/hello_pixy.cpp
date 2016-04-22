@@ -38,6 +38,8 @@ void handle_SIGINT(int unused)
 int main(int argc, char * argv[])
 {
   setbuf(stdout, NULL);
+  setbuf(stderr, NULL);
+
   int      i = 0;
   int      index;
   int      blocks_copied;
