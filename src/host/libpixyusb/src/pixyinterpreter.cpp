@@ -22,6 +22,11 @@ PixyInterpreter::PixyInterpreter()
   thread_die_  = false;
   thread_dead_ = true;
   receiver_    = NULL;
+
+  fprintf(stderr, "PixyInterpreter: [thread_die_: %d, thread_dead_: %d, receiver_: %p]\n",
+          thread_die_,
+          thread_dead_,
+          receiver_);
 }
 
 PixyInterpreter::~PixyInterpreter()
@@ -33,9 +38,11 @@ int PixyInterpreter::init()
 {
   int USB_return_value;
 
+  fprintf(stderr, "PixyInterpreter: [thread_die_: %d, thread_dead_: %d, receiver_: %p]\n",
+          thread_die_, thread_dead_, receiver_);
   if(thread_dead_ == false) 
   {
-    fprintf(stderr, "libpixy: Already initialized.");
+    fprintf(stderr, "libpixy: Already initialized.\n");
     return 0;
   }
 

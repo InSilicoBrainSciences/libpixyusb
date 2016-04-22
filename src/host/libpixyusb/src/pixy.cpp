@@ -2,6 +2,7 @@
 #include <boost/container/map.hpp>
 #include <stdio.h>
 #include "pixy.h"
+#include "pixydebug.h"
 #include "pixyinterpreter.hpp"
 
 using std::make_pair;
@@ -88,23 +89,28 @@ extern "C"
     { 0,                          0 }
   };
 
-  static int pixy_initialized = false;
+  // static int pixy_initialized = false;
 
   int pixy_init(int pixy_id)
   {
+    // PIXYDEBUG("Entering pixy_init\n");
+    printf("Entering pixy_init\n");
     // TODO: Determine if this is the right set of error codes.
     if (interpreter.find(pixy_id) != interpreter.cend()) {
+      printf("Existing interpreter found for pixy with id %d\n", pixy_id);
       return PIXY_ERROR_INVALID_ID;  
     }
 
     int return_value;
 
+    printf("Generating new interpreter for pixy with id %d\n", pixy_id);
     interpreter.emplace(pixy_id, PixyInterpreter());
     return_value = interpreter[pixy_id].init();
 
     // TODO: Determine if I need to check if the pixy has been initialized.
     if(return_value != 0) 
     {
+      printf("Could not initialize interpreter for pixy with id %d\n", pixy_id);
       interpreter.erase(pixy_id);
     }
 
@@ -137,7 +143,7 @@ extern "C"
       va_list arguments;
       int     return_value;
 
-      if(!pixy_initialized) return -1;
+      // if(!pixy_initialized) return -1;
 
       va_start(arguments, name);
       return_value = interpreter[pixy_id].send_command(name, arguments);
@@ -153,7 +159,7 @@ extern "C"
   void pixy_close(int pixy_id)
   {
     if (interpreter.find(pixy_id) != interpreter.cend()) {
-      if(!pixy_initialized) return;
+      // if(!pixy_initialized) return;
 
       interpreter[pixy_id].close();
       interpreter.erase(pixy_id);
