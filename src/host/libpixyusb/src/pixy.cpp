@@ -1,12 +1,12 @@
-#include <utility>
 #include <stdio.h>
+
 #include <boost/container/map.hpp>
 #include <boost/shared_ptr.hpp>
+
 #include "pixy.h"
 #include "pixydebug.h"
 #include "pixyinterpreter.hpp"
 
-using std::make_pair;
 using boost::container::map;
 using boost::shared_ptr;
 
@@ -87,7 +87,7 @@ extern "C"
     { PIXY_ERROR_USB_NOT_FOUND,   "USB Error: Target not found" },
     { PIXY_ERROR_CHIRP,           "Chirp Protocol Error" },
     { PIXY_ERROR_INVALID_COMMAND, "Pixy Error: Invalid command" },
-    { PIXY_ERROR_INVALID_ID,      "Pixy Error: Inavlid ID" },
+    { PIXY_ERROR_INVALID_ID,      "Pixy Error: Invalid ID" },
     { 0,                          0 }
   };
 
@@ -124,8 +124,7 @@ extern "C"
     if (interpreter.find(pixy_id) != interpreter.cend()) {
       return interpreter[pixy_id]->get_blocks(max_blocks, blocks);
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -134,8 +133,7 @@ extern "C"
     if (interpreter.find(pixy_id) != interpreter.cend()) {
       return interpreter[pixy_id]->blocks_are_new();
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -153,8 +151,7 @@ extern "C"
 
       return return_value;
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -209,8 +206,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -230,8 +226,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -251,8 +246,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -272,8 +266,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -293,8 +286,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -314,8 +306,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -338,8 +329,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -359,8 +349,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
   
@@ -380,8 +369,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -404,8 +392,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -434,8 +421,7 @@ extern "C"
 
       return 0;
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -455,8 +441,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -476,8 +461,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -497,8 +481,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -518,8 +501,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -539,8 +521,7 @@ extern "C"
         return chirp_response;
       }
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 
@@ -574,8 +555,7 @@ extern "C"
 
       return 0;
     } else {
-      // TODO: Determine the correct error code to return.
-      return -1;
+      return PIXY_ERROR_INVALID_ID;
     }
   }
 }

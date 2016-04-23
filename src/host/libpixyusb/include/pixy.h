@@ -92,16 +92,17 @@ extern "C"
   /**
     @brief      Indicates when new block data from Pixy is received.
 
-    @return  1  New Data:   Block data has been updated.
-    @return  0  Stale Data: Block data has not changed since pixy_get_blocks() was
-                            last called.
-    @return  -1 Invalid Pixy ID: The given pixy_id doesn't exist.
+    @return  1  New Data:              Block data has been updated.
+    @return  0  Stale Data:            Block data has not changed since
+                                       pixy_get_blocks() was last called.
+    @return  PIXY_ERROR_INVALID_ID     ID Error: Invalid ID
   */
   int pixy_blocks_are_new(int pixy_id);
 
   /**
     @brief      Copies up to 'max_blocks' number of Blocks to the address pointed
                 to by 'blocks'.
+    @param[in]  pixy_id    The ID of the pixy being referenced in this call.
     @param[in]  max_blocks Maximum number of Blocks to copy to the address pointed to
                            by 'blocks'.
     @param[out] blocks     Address of an array in which to copy the blocks to.
@@ -119,6 +120,7 @@ extern "C"
 
   /**
     @brief      Send a command to Pixy.
+    @param[in]  pixy_id    The ID of the pixy being referenced in this call.
     @param[in]  name  Chirp remote procedure call identifier string.
     @return     -1    Error
 
@@ -127,17 +129,20 @@ extern "C"
 
   /**
     @brief Terminates connection with Pixy.
+    @param[in]  pixy_id    The ID of the pixy being referenced in this call.
   */
   void pixy_close(int pixy_id);
 
   /**
     @brief Send description of pixy error to stdout.
+    @param[in] pixy_id    The ID of the pixy being referenced in this call.
     @param[in] error_code  Pixy error code
   */
   void pixy_error(int pixy_id, int error_code);
 
   /**
     @brief  Set color of pixy LED.
+    @param[in] pixy_id    The ID of the pixy being referenced in this call.
     @param[in] red   Brightness value for red LED element.   [0, 255] 0 = Off, 255 = On
     @param[in] green Brightness value for green LED element. [0, 255] 0 = Off, 255 = On
     @param[in] blue  Brightness value for blue LED element.  [0, 255] 0 = Off, 255 = On
@@ -148,7 +153,8 @@ extern "C"
 
   /**
     @brief  Set pixy LED maximum current.
-    @param[in] current  Maximum current (microamps).
+    @param[in]  pixy_id    The ID of the pixy being referenced in this call.
+    @param[in]  current  Maximum current (microamps).
     @return     0         Success
     @return     Negative  Error
   */
@@ -156,6 +162,7 @@ extern "C"
 
   /**
     @brief   Get pixy LED maximum current.
+    @param[in]  pixy_id    The ID of the pixy being referenced in this call.
     @return     Non-negative Maximum LED current value (microamps).
     @return     Negative     Error
   */
@@ -163,8 +170,9 @@ extern "C"
 
   /**
     @brief    Enable or disable pixy camera auto white balance.
-    @param    enable  1: Enable white balance.
-                      0: Disable white balance.
+    @param[in]  pixy_id    The ID of the pixy being referenced in this call.
+    @param      enable  1: Enable white balance.
+                        0: Disable white balance.
     @return     0         Success
     @return     Negative  Error
   */
@@ -172,6 +180,7 @@ extern "C"
 
   /**
     @brief    Get pixy camera auto white balance setting.
+    @param[in]  pixy_id    The ID of the pixy being referenced in this call.
     @return     1         Auto white balance is enabled.
     @return     0         Auto white balance is disabled.
     @return     Negative  Error
@@ -180,6 +189,7 @@ extern "C"
 
   /**
     @brief   Get pixy camera white balance()
+    @param[in]  pixy_id    The ID of the pixy being referenced in this call.
     @return  Composite value for RGB white balance:
              white balance = green_value + (red_value << 8) + (blue << 16)
   */
@@ -187,6 +197,7 @@ extern "C"
 
   /**
     @brief     Set pixy camera white balance.
+    @param[in] pixy_id    The ID of the pixy being referenced in this call.
     @param[in] red    Red white balance value.
     @param[in] green  Green white balance value.
     @param[in] blue   Blue white balance value.
@@ -197,6 +208,7 @@ extern "C"
 
   /**
     @brief     Enable or disable pixy camera auto exposure compensation.
+    @param[in] pixy_id    The ID of the pixy being referenced in this call.
     @param[in] enable  0: Disable auto exposure compensation.
                        1: Enable auto exposure compensation.
     @return     0         Success
@@ -206,6 +218,7 @@ extern "C"
 
   /**
     @brief     Get pixy camera auto exposure compensation setting.
+    @param[in] pixy_id    The ID of the pixy being referenced in this call.
     @return     1         Auto exposure compensation enabled.
     @return     0         Auto exposure compensation disabled.
     @return     Negative  Error
@@ -214,6 +227,7 @@ extern "C"
 
   /**
     @brief     Set pixy camera exposure compensation.
+    @param[in] pixy_id    The ID of the pixy being referenced in this call.
     @param[in] gain  Camera gain.
     @param[in] comp  Camera exposure compensation.
     @return     0         Success
@@ -223,6 +237,7 @@ extern "C"
 
   /**
     @brief     Get pixy camera exposure compensation.
+    @param[in]  pixy_id    The ID of the pixy being referenced in this call.
     @param[out] gain  Camera gain.
     @param[out] comp  Camera exposure compensation.
     @return     0         Success
@@ -232,6 +247,7 @@ extern "C"
 
   /**
     @brief     Set pixy camera brightness.
+    @param[in] pixy_id    The ID of the pixy being referenced in this call.
     @param[in] brightness  Brightness value.
     @return     0         Success
     @return     Negative  Error
@@ -240,6 +256,7 @@ extern "C"
 
   /**
     @brief     Get pixy camera brightness.
+    @param[in] pixy_id    The ID of the pixy being referenced in this call.
     @return     Non-negative Brightness value.
     @return     Negative     Error
   */
@@ -247,7 +264,8 @@ extern "C"
 
   /**
     @brief     Get pixy servo axis position.
-    @param     channel  Channel value. Range: [0, 1]
+    @param[in] pixy_id    The ID of the pixy being referenced in this call.
+    @param[in] channel  Channel value. Range: [0, 1]
     @return     Position of channel. Range: [0, 999]
     @return     Negative  Error
   */
@@ -255,7 +273,8 @@ extern "C"
 
   /**
     @brief     Set pixy servo axis position.
-    @param     channel  Channel value. Range: [0, 1]
+    @param[in] pixy_id    The ID of the pixy being referenced in this call.
+    @param[in] channel  Channel value. Range: [0, 1]
     @param     position Position value of the channel. Range: [0, 999]
     @return      0         Success
     @return      Negative  Error
@@ -270,6 +289,7 @@ extern "C"
 
   /**
     @brief    Get pixy firmware version.
+    @param[in]   pixy_id    The ID of the pixy being referenced in this call.
     @param[out]  major  Major version component
     @param[out]  minor  Minor version component
     @param[out]  build  Build identifier

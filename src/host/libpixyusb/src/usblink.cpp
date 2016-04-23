@@ -25,154 +25,151 @@ boost::container::set<uint8_t> USBLink::devices_in_use_;
 
 USBLink::USBLink()
 {
-    open_ = false;
-    device_address_ = 0;
-    m_handle = 0;
-    m_context = 0;
-    m_blockSize = 64;
-    m_flags = LINK_FLAG_ERROR_CORRECTED;
+  open_ = false;
+  device_address_ = 0;
+  m_handle = 0;
+  m_context = 0;
+  m_blockSize = 64;
+  m_flags = LINK_FLAG_ERROR_CORRECTED;
 }
 
 USBLink::~USBLink()
 {
-    close();
+  close();
 }
 
 int USBLink::open()
 {
-    close();
+  close();
 
-    libusb_init(&m_context);
+  libusb_init(&m_context);
 
-    return openDevice();
+  return openDevice();
 }
 
 void USBLink::close()
 {
-    if (m_handle)
-    {
-        libusb_close(m_handle);
-        m_handle = 0;
-    }
-    if (m_context)
-    {
-        libusb_exit(m_context);
-        m_context = 0;
-    }
-    if (open_) {
-      devices_in_use_.erase(device_address_);
-    }
-    device_address_ = 0;
-    open_ = false;
+  if (m_handle)
+  {
+    libusb_close(m_handle);
+    m_handle = 0;
+  }
+  if (m_context)
+  {
+    libusb_exit(m_context);
+    m_context = 0;
+  }
+  if (open_) {
+    devices_in_use_.erase(device_address_);
+  }
+  device_address_ = 0;
+  open_ = false;
 }
 
 int USBLink::openDevice()
 {
-    libusb_device **list = NULL;
-    int i, count = 0;
-    libusb_device *device;
-    libusb_device_descriptor desc;
+  libusb_device **list = NULL;
+  int i, count = 0;
+  libusb_device *device;
+  libusb_device_descriptor desc;
 
 #ifdef __MACOS__
-    const unsigned int MILLISECONDS_TO_SLEEP = 100;
+  const unsigned int MILLISECONDS_TO_SLEEP = 100;
 #endif
 
-    count = libusb_get_device_list(m_context, &list);
+  count = libusb_get_device_list(m_context, &list);
 
-    for (i=0; i<count; i++)
+  for (i=0; i<count; i++)
+  {
+    device = list[i];
+    libusb_get_device_descriptor(device, &desc);
+    const uint8_t device_address = libusb_get_device_address(device);
+
+    fprintf(stderr, "Scanning device number %d with address %u\n",
+            count, device_address);
+
+    if (desc.idVendor==PIXY_VID && desc.idProduct==PIXY_PID)
     {
-        device = list[i];
-        libusb_get_device_descriptor(device, &desc);
-        const uint8_t device_address = libusb_get_device_address(device);
-
-        fprintf(stderr, "Scanning device number %d with address %u\n",
-                count, device_address);
-
-        if (desc.idVendor==PIXY_VID && desc.idProduct==PIXY_PID)
-        {
-            if (libusb_open(device, &m_handle)==0)
-            {
-            #ifdef __MACOS__
-                libusb_reset_device(m_handle);
-                usleep(MILLISECONDS_TO_SLEEP * 1000);
-            #endif
-                if ((devices_in_use_.find(device_address) != devices_in_use_.cend()) ||
-                    (libusb_set_configuration(m_handle, 1) < 0) ||
-                    (libusb_claim_interface(m_handle, 1) < 0)) {
-                    libusb_close(m_handle);
-                    m_handle = 0;
-                    continue;
-                }
-#ifdef __LINUX__
-                libusb_reset_device(m_handle);
+      if (libusb_open(device, &m_handle)==0)
+      {
+#ifdef __MACOS__
+        libusb_reset_device(m_handle);
+        usleep(MILLISECONDS_TO_SLEEP * 1000);
 #endif
-                devices_in_use_.insert(device_address);
-                device_address_ = device_address;
-                open_ = true;
-                fprintf(stderr, "Success! :)\n");
-                break;
-            }
+        if ((devices_in_use_.find(device_address) != devices_in_use_.cend()) ||
+            (libusb_set_configuration(m_handle, 1) < 0) ||
+            (libusb_claim_interface(m_handle, 1) < 0)) {
+          libusb_close(m_handle);
+          m_handle = 0;
+          continue;
         }
+#ifdef __LINUX__
+        libusb_reset_device(m_handle);
+#endif
+        devices_in_use_.insert(device_address);
+        device_address_ = device_address;
+        open_ = true;
+        fprintf(stderr, "Success! :)\n");
+        break;
+      }
     }
-    libusb_free_device_list(list, 1);
-    if (i==count) { // no devices found
-        fprintf(stderr, "No devices found :(\n");
-        return -1;
-    }
-    return 0;
+  }
+  libusb_free_device_list(list, 1);
+  if (i==count) { // no devices found
+    fprintf(stderr, "No devices found :(\n");
+    return -1;
+  }
+  return 0;
 }
 
 
 
 int USBLink::send(const uint8_t *data, uint32_t len, uint16_t timeoutMs)
 {
-    int res, transferred;
+  int res, transferred;
 
-    if (timeoutMs==0) // 0 equals infinity
-        timeoutMs = 10;
+  if (timeoutMs==0) // 0 equals infinity
+    timeoutMs = 10;
 
-    if ((res=libusb_bulk_transfer(m_handle, 0x02, (unsigned char *)data, len, &transferred, timeoutMs))<0)
-    {
+  if ((res=libusb_bulk_transfer(m_handle, 0x02, (unsigned char *)data, len, &transferred, timeoutMs))<0)
+  {
 #ifdef __MACOS__
-        libusb_clear_halt(m_handle, 0x02);
+    libusb_clear_halt(m_handle, 0x02);
 #endif
-        log("pixydebug: USBLink::send() returned %d\n", res);
-        return res;
-    }
-    
-    log("pixydebug: USBLink::send() returned %d\n", transferred);
-    return transferred;
+    log("pixydebug: USBLink::send() returned %d\n", res);
+    return res;
+  }
+  
+  log("pixydebug: USBLink::send() returned %d\n", transferred);
+  return transferred;
 }
 
 int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 {
-    int res, transferred;
+  int res, transferred;
 
-    if (timeoutMs==0) // 0 equals infinity
-        timeoutMs = 50;
+  if (timeoutMs==0) // 0 equals infinity
+    timeoutMs = 50;
 
-    // Note: if this call is taking more time than than expected, check to see if we're connected as USB 2.0.  Bad USB cables can
-    // cause us to revert to a 1.0 connection.
-    if ((res=libusb_bulk_transfer(m_handle, 0x82, (unsigned char *)data, len, &transferred, timeoutMs))<0)
-    {
-        log("pixydebug: libusb_bulk_transfer() = %d\n", res);
+  // Note: if this call is taking more time than than expected, check to see if we're connected as USB 2.0.  Bad USB cables can
+  // cause us to revert to a 1.0 connection.
+  if ((res=libusb_bulk_transfer(m_handle, 0x82, (unsigned char *)data, len, &transferred, timeoutMs))<0)
+  {
+    log("pixydebug: libusb_bulk_transfer() = %d\n", res);
 #ifdef __MACOS__
-        libusb_clear_halt(m_handle, 0x82);
+    libusb_clear_halt(m_handle, 0x82);
 #endif
-        return res;
-    }
-    return transferred;
+    return res;
+  }
+  return transferred;
 }
 
 void USBLink::setTimer()
 {
-    timer_.reset();
+  timer_.reset();
 }
 
 uint32_t USBLink::getTimer()
 {
-    return timer_.elapsed();
+  return timer_.elapsed();
 }
-
-
-
