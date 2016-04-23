@@ -79,7 +79,22 @@ extern "C"
   };
 
   /**
+    @brief Determines if the given ID is free.
+    @return  1                  The ID is free.
+    @return  0                  The ID is taken.
+  */
+  int pixy_id_free(int pixy_id);
+
+  /**
+    @brief Determines the number of pixies connected.
+    @return  Non-negative              The number of pixies connected.
+    @return  Negative                  Error
+  */
+  int pixy_count();
+
+  /**
     @brief Creates a connection with Pixy and listens for Pixy messages.
+    @param[in]  pixy_id    The ID of the pixy being referenced in this call.
     @return  0                         Success
     @return  PIXY_ERROR_USB_IO         USB Error: I/O
     @return  PIXY_ERROR_NOT_FOUND      USB Error: Pixy not found
@@ -91,6 +106,7 @@ extern "C"
 
   /**
     @brief      Indicates when new block data from Pixy is received.
+    @param[in]  pixy_id    The ID of the pixy being referenced in this call.
 
     @return  1  New Data:              Block data has been updated.
     @return  0  Stale Data:            Block data has not changed since

@@ -66,6 +66,28 @@ void USBLink::close()
   open_ = false;
 }
 
+int USBLink::numDevices()
+{
+  libusb_device **list = NULL;
+  int count = 0;
+  int num_pixies = 0;
+  libusb_device *device;
+  libusb_device_descriptor desc;
+  libusb_context *context;
+
+  libusb_init(&context);
+  count = libusb_get_device_list(context, &list);
+  for (int i = 0; i < count; i++)
+  {
+    device = list[i];
+    libusb_get_device_descriptor(device, &desc);
+    if (desc.idVendor==PIXY_VID && desc.idProduct==PIXY_PID)
+      num_pixies++;
+  }
+  libusb_free_device_list(list, 1);
+  return num_pixies;
+}
+
 int USBLink::openDevice()
 {
   libusb_device **list = NULL;
@@ -84,9 +106,6 @@ int USBLink::openDevice()
     device = list[i];
     libusb_get_device_descriptor(device, &desc);
     const uint8_t device_address = libusb_get_device_address(device);
-
-    fprintf(stderr, "Scanning device number %d with address %u\n",
-            count, device_address);
 
     if (desc.idVendor==PIXY_VID && desc.idProduct==PIXY_PID)
     {
@@ -109,16 +128,13 @@ int USBLink::openDevice()
         devices_in_use_.insert(device_address);
         device_address_ = device_address;
         open_ = true;
-        fprintf(stderr, "Success! :)\n");
         break;
       }
     }
   }
   libusb_free_device_list(list, 1);
-  if (i==count) { // no devices found
-    fprintf(stderr, "No devices found :(\n");
+  if (i==count) // no devices found
     return -1;
-  }
   return 0;
 }
 

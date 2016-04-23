@@ -91,28 +91,29 @@ extern "C"
     { 0,                          0 }
   };
 
-  // static int pixy_initialized = false;
+  int pixy_id_free(int pixy_id)
+  {
+    return interpreter.find(pixy_id) == interpreter.cend();
+  }
+
+  int pixy_count()
+  {
+    return USBLink::numDevices();
+  }
 
   int pixy_init(int pixy_id)
   {
-    // PIXYDEBUG("Entering pixy_init\n");
-    fprintf(stderr, "Entering pixy_init\n");
-    // TODO: Determine if this is the right set of error codes.
     if (interpreter.find(pixy_id) != interpreter.cend()) {
-      fprintf(stderr, "Existing interpreter found for pixy with id %d\n", pixy_id);
       return PIXY_ERROR_INVALID_ID;  
     }
 
     int return_value;
 
-    fprintf(stderr, "Generating new interpreter for pixy with id %d\n", pixy_id);
     interpreter.emplace(pixy_id, shared_ptr<PixyInterpreter>(new PixyInterpreter));
     return_value = interpreter[pixy_id]->init();
 
-    // TODO: Determine if I need to check if the pixy has been initialized.
     if(return_value != 0) 
     {
-      fprintf(stderr, "Could not initialize interpreter for pixy with id %d\n", pixy_id);
       interpreter.erase(pixy_id);
     }
 

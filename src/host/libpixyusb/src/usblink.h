@@ -24,6 +24,8 @@
 class USBLink : public Link
 {
 public:
+  static int numDevices();
+
   USBLink();
   virtual ~USBLink();
 
