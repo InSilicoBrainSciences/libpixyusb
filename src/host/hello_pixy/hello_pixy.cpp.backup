@@ -20,13 +20,11 @@
 #include <string.h>
 #include "pixy.h"
 
-#define PIXY_ID_A            0
-#define PIXY_ID_B            1
+#define PIXY_ID              0
 #define BLOCK_BUFFER_SIZE    25
 
 // Pixy Block buffer // 
-struct Block blocks_A[BLOCK_BUFFER_SIZE];
-struct Block blocks_B[BLOCK_BUFFER_SIZE];
+struct Block blocks[BLOCK_BUFFER_SIZE];
 
 static bool run_flag = true;
 
@@ -42,16 +40,11 @@ int main(int argc, char * argv[])
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
 
-  int      i_A = 0;
-  int      i_B = 0;
-  int      index_A;
-  int      index_B;
-  int      blocks_copied_A;
-  int      blocks_copied_B;
-  int      pixy_init_status_A;
-  int      pixy_init_status_B;
-  char     buf_A[128];
-  char     buf_B[128];
+  int      i = 0;
+  int      index;
+  int      blocks_copied;
+  int      pixy_init_status;
+  char     buf[128];
 
   // Catch CTRL+C (SIGINT) signals //
   signal(SIGINT, handle_SIGINT);
@@ -59,62 +52,31 @@ int main(int argc, char * argv[])
   fprintf(stderr, "Hello Pixy:\n libpixyusb Version: %s\n", __LIBPIXY_VERSION__);
 
   // Connect to Pixy //
+  pixy_init_status = pixy_init(PIXY_ID);
 
   // Was there an error initializing pixy? //
-  pixy_init_status_A = pixy_init(PIXY_ID_A);
-  if(pixy_init_status_A != 0)
+  if(pixy_init_status != 0)
   {
     // Error initializing Pixy //
     fprintf(stderr, "pixy_init(): ");
-    pixy_error(PIXY_ID_A, pixy_init_status_A);
+    pixy_error(PIXY_ID, pixy_init_status);
 
-    return pixy_init_status_A;
+    return pixy_init_status;
   }
 
-  pixy_init_status_B = pixy_init(PIXY_ID_B);
-  if(pixy_init_status_B != 0)
-  {
-    // Error initializing Pixy //
-    fprintf(stderr, "pixy_init(): ");
-    pixy_error(PIXY_ID_B, pixy_init_status_B);
-
-    return pixy_init_status_B;
-  }
-
-  // Request Pixy firmware version Camera A //
+  // Request Pixy firmware version //
   {
     uint16_t major;
     uint16_t minor;
     uint16_t build;
     int      return_value;
 
-    return_value = pixy_get_firmware_version(PIXY_ID_A, &major, &minor, &build);
+    return_value = pixy_get_firmware_version(PIXY_ID, &major, &minor, &build);
 
     if (return_value) {
       // Error //
       fprintf(stderr, "Failed to retrieve Pixy firmware version. ");
-      pixy_error(PIXY_ID_A, return_value);
-
-      return return_value;
-    } else {
-      // Success //
-      fprintf(stderr, " Pixy Firmware Version: %d.%d.%d\n", major, minor, build);
-    }
-  }
-
-  // Request Pixy firmware version for Camera B //
-  {
-    uint16_t major;
-    uint16_t minor;
-    uint16_t build;
-    int      return_value;
-
-    return_value = pixy_get_firmware_version(PIXY_ID_B, &major, &minor, &build);
-
-    if (return_value) {
-      // Error //
-      fprintf(stderr, "Failed to retrieve Pixy firmware version. ");
-      pixy_error(PIXY_ID_B, return_value);
+      pixy_error(PIXY_ID, return_value);
 
       return return_value;
     } else {
@@ -166,43 +128,24 @@ int main(int argc, char * argv[])
   while(run_flag)
   {
     // Wait for new blocks to be available //
-    while(!pixy_blocks_are_new(PIXY_ID_A) && run_flag); 
-    while(!pixy_blocks_are_new(PIXY_ID_B) && run_flag); 
+    while(!pixy_blocks_are_new(PIXY_ID) && run_flag); 
 
     // Get blocks from Pixy //
-    blocks_copied_A = pixy_get_blocks(PIXY_ID_A, BLOCK_BUFFER_SIZE, &blocks_A[0]);
-    blocks_copied_B = pixy_get_blocks(PIXY_ID_B, BLOCK_BUFFER_SIZE, &blocks_B[0]);
+    blocks_copied = pixy_get_blocks(PIXY_ID, BLOCK_BUFFER_SIZE, &blocks[0]);
 
-    if(blocks_copied_A < 0) {
+    if(blocks_copied < 0) {
       // Error: pixy_get_blocks //
       fprintf(stderr, "pixy_get_blocks(): ");
-      pixy_error(PIXY_ID_A, blocks_copied_A);
-    }
-
-    if(blocks_copied_B < 0) {
-      // Error: pixy_get_blocks //
-      fprintf(stderr, "pixy_get_blocks(): ");
-      pixy_error(PIXY_ID_B, blocks_copied_B);
+      pixy_error(PIXY_ID, blocks_copied);
     }
 
     // Display received blocks //
-    fprintf(stderr, "Camera A frame %d:\n", i_A);
-    for(index_A = 0; index_A != blocks_copied_A; ++index_A) {    
-       blocks_A[index_A].print(buf_A);
-       fprintf(stderr, "  %s\n", buf_A);
+    fprintf(stderr, "frame %d:\n", i);
+    for(index = 0; index != blocks_copied; ++index) {    
+       blocks[index].print(buf);
+       fprintf(stderr, "  %s\n", buf);
     }
-
-    // Display received blocks //
-    fprintf(stderr, "Camera B frame %d:\n", i_B);
-    for(index_B = 0; index_B != blocks_copied_B; ++index_B) {    
-       blocks_B[index_B].print(buf_B);
-       fprintf(stderr, "  %s\n", buf_B);
-    }
-
-    i_A++;
-    i_B++;
+    i++;
   }
-
-  pixy_close(PIXY_ID_A);
-  pixy_close(PIXY_ID_B);
+  pixy_close(PIXY_ID);
 }

@@ -108,6 +108,7 @@ int USBLink::openDevice()
 #endif
                 devices_in_use_.insert(device_address);
                 device_address_ = device_address;
+                open_ = true;
                 fprintf(stderr, "Success! :)\n");
                 break;
             }
