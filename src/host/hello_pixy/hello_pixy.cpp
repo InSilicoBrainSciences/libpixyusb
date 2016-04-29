@@ -20,7 +20,6 @@
 #include <string.h>
 #include "pixy.h"
 
-#define PIXY_ID              0
 #define BLOCK_BUFFER_SIZE    25
 
 // Pixy Block buffer // 
@@ -49,14 +48,14 @@ int main(int argc, char * argv[])
   fprintf(stderr, "Hello Pixy:\n libpixyusb Version: %s\n", __LIBPIXY_VERSION__);
 
   // Connect to Pixy //
-  pixy_init_status = pixy_init(PIXY_ID);
+  pixy_init_status = pixy_init();
 
   // Was there an error initializing pixy? //
   if(pixy_init_status != 0)
   {
     // Error initializing Pixy //
     fprintf(stderr, "pixy_init(): ");
-    pixy_error(PIXY_ID, pixy_init_status);
+    pixy_error(pixy_init_status);
 
     return pixy_init_status;
   }
@@ -68,12 +67,12 @@ int main(int argc, char * argv[])
     uint16_t build;
     int      return_value;
 
-    return_value = pixy_get_firmware_version(PIXY_ID, &major, &minor, &build);
+    return_value = pixy_get_firmware_version(&major, &minor, &build);
 
     if (return_value) {
       // Error //
       fprintf(stderr, "Failed to retrieve Pixy firmware version. ");
-      pixy_error(PIXY_ID, return_value);
+      pixy_error(return_value);
 
       return return_value;
     } else {
@@ -92,8 +91,7 @@ int main(int argc, char * argv[])
     //
     //   Parameters:                 Notes:
     //
-    //   pixy_command(     PIXY_ID,  Pixy non-negative identifier.
-    //                "cam_setAWB",  String identifier for remote procedure
+    //   pixy_command("cam_setAWB",  String identifier for remote procedure
     //                        0x01,  Length (in bytes) of first output parameter
     //                           1,  Value of first output parameter
     //                           0,  Parameter list seperator token (See value of: END_OUT_ARGS)
@@ -102,24 +100,23 @@ int main(int argc, char * argv[])
     //
 
     // Enable auto white balance //
-    pixy_command(PIXY_ID, "cam_setAWB", UINT8(0x01), END_OUT_ARGS,  &response, END_IN_ARGS);
+    pixy_command("cam_setAWB", UINT8(0x01), END_OUT_ARGS,  &response, END_IN_ARGS);
 
     // Execute remote procedure call "cam_getAWB" with no output (host->pixy) parameters
     //
     //   Parameters:                 Notes:
     //
-    //   pixy_command(     PIXY_ID,  Pixy non-negative identifier.
-    //                "cam_setAWB",  String identifier for remote procedure
+    //   pixy_command("cam_setAWB",  String identifier for remote procedure
     //                           0,  Parameter list seperator token (See value of: END_OUT_ARGS)
     //                   &response,  Pointer to memory address for return value from remote procedure call
     //                           0); Parameter list seperator token (See value of: END_IN_ARGS)
     //
 
     // Get auto white balance //
-    return_value = pixy_command(PIXY_ID, "cam_getAWB", END_OUT_ARGS, &response, END_IN_ARGS);
+    return_value = pixy_command("cam_getAWB", END_OUT_ARGS, &response, END_IN_ARGS);
 
     // Set auto white balance back to disabled //
-    pixy_command(PIXY_ID, "cam_setAWB", UINT8(0x00), END_OUT_ARGS,  &response, END_IN_ARGS);
+    pixy_command("cam_setAWB", UINT8(0x00), END_OUT_ARGS,  &response, END_IN_ARGS);
   }
 #endif
 
@@ -127,15 +124,15 @@ int main(int argc, char * argv[])
   while(run_flag)
   {
     // Wait for new blocks to be available //
-    while(!pixy_blocks_are_new(PIXY_ID) && run_flag); 
+    while(!pixy_blocks_are_new() && run_flag); 
 
     // Get blocks from Pixy //
-    blocks_copied = pixy_get_blocks(PIXY_ID, BLOCK_BUFFER_SIZE, &blocks[0]);
+    blocks_copied = pixy_get_blocks(BLOCK_BUFFER_SIZE, &blocks[0]);
 
     if(blocks_copied < 0) {
       // Error: pixy_get_blocks //
       fprintf(stderr, "pixy_get_blocks(): ");
-      pixy_error(PIXY_ID, blocks_copied);
+      pixy_error(blocks_copied);
     }
 
     // Display received blocks //
@@ -146,5 +143,5 @@ int main(int argc, char * argv[])
     }
     i++;
   }
-  pixy_close(PIXY_ID);
+  pixy_close();
 }

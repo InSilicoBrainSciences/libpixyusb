@@ -10,9 +10,9 @@
 
 %array_class(struct Block, BlockArray);
 
-int pixy_init(int pixy_id);
-int pixy_get_blocks(int pixy_id, uint16_t max_blocks, BlockArray *blocks);
-void pixy_close(int pixy_id);
+int pixy_init();
+int pixy_get_blocks(uint16_t max_blocks, BlockArray *blocks);
+void pixy_close();
 
 struct Block
 {

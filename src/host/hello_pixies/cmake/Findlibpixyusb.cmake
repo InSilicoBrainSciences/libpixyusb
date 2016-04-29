@@ -20,6 +20,7 @@ else (LIBPIXYUSB_0_LIBRARY AND LIBPIXYUSB_0_INCLUDE_DIR)
   find_path(INCLUDE_DIR
     NAMES
       pixy.h
+      pixyhandle.h
       pixy_defs.h
     PATHS
       /usr/include

@@ -6,7 +6,7 @@ from ctypes import *
 print ("Pixy Python SWIG Example -- Get Blocks")
 
 # Initialize Pixy Interpreter thread #
-pixy_init(0)
+pixy_init()
 
 class Blocks (Structure):
   _fields_ = [ ("type", c_uint),

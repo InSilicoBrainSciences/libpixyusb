@@ -17,15 +17,16 @@
 #define _USBLINK_H
 
 #include <boost/container/set.hpp>
+#include <boost/thread/mutex.hpp>
+
 #include <link.h>
+
 #include "utils/timer.hpp"
 #include "libusb.h"
 
 class USBLink : public Link
 {
 public:
-  static int numDevices();
-
   USBLink();
   virtual ~USBLink();
 
@@ -35,8 +36,13 @@ public:
   virtual int receive(uint8_t *data, uint32_t len, uint16_t timeoutMs);
   virtual void setTimer();
   virtual uint32_t getTimer();
+  uint8_t device_address() const { return device_address_; }
+
+  static int numDevices();
+  static int numDevicesInUse();
 
 private:
+  static boost::mutex set_mutex_;
   static boost::container::set<uint8_t> devices_in_use_;
   
   int openDevice();

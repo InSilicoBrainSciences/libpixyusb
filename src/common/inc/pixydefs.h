@@ -30,7 +30,8 @@
 #define PIXY_ERROR_INVALID_PARAMETER        -150
 #define PIXY_ERROR_CHIRP                    -151
 #define PIXY_ERROR_INVALID_COMMAND          -152
-#define PIXY_ERROR_INVALID_ID               -153
+#define PIXY_ERROR_INITIALIZED              -153
+#define PIXY_ERROR_UNINITIALIZED            -154
 
 #define CRP_ARRAY                       0x80 // bit
 #define CRP_FLT                         0x10 // bit

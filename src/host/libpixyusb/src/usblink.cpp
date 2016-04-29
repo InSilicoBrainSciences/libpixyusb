@@ -14,13 +14,16 @@
 //
 
 #include <boost/container/set.hpp>
+
 #include <unistd.h>
 #include <stdio.h>
+
 #include "usblink.h"
 #include "pixy.h"
 #include "utils/timer.hpp"
 #include "debuglog.h"
 
+boost::mutex USBLink::set_mutex_;
 boost::container::set<uint8_t> USBLink::devices_in_use_;
 
 USBLink::USBLink()
@@ -60,7 +63,9 @@ void USBLink::close()
     m_context = 0;
   }
   if (open_) {
+    set_mutex_.lock();
     devices_in_use_.erase(device_address_);
+    set_mutex_.unlock();
   }
   device_address_ = 0;
   open_ = false;
@@ -86,6 +91,14 @@ int USBLink::numDevices()
   }
   libusb_free_device_list(list, 1);
   return num_pixies;
+}
+
+int USBLink::numDevicesInUse()
+{
+  set_mutex_.lock();
+  int devices_in_use = devices_in_use_.size();
+  set_mutex_.unlock();
+  return devices_in_use;
 }
 
 int USBLink::openDevice()
@@ -115,11 +128,13 @@ int USBLink::openDevice()
         libusb_reset_device(m_handle);
         usleep(MILLISECONDS_TO_SLEEP * 1000);
 #endif
+        set_mutex_.lock();
         if ((devices_in_use_.find(device_address) != devices_in_use_.cend()) ||
             (libusb_set_configuration(m_handle, 1) < 0) ||
             (libusb_claim_interface(m_handle, 1) < 0)) {
           libusb_close(m_handle);
           m_handle = 0;
+          set_mutex_.unlock();
           continue;
         }
 #ifdef __LINUX__
@@ -127,6 +142,7 @@ int USBLink::openDevice()
 #endif
         devices_in_use_.insert(device_address);
         device_address_ = device_address;
+        set_mutex_.unlock();
         open_ = true;
         break;
       }

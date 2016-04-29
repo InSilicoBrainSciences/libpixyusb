@@ -21,7 +21,7 @@
 
 #include <vector>
 
-#include "pixy.h"
+#include "pixyhandle.hpp"
 
 #define BLOCK_BUFFER_SIZE    25
 
@@ -43,7 +43,7 @@ int main(int argc, char * argv[])
   // Catch CTRL+C (SIGINT) signals //
   signal(SIGINT, handle_SIGINT);
 
-  int num_pixies = pixy_count();
+  int num_pixies = PixyHandle::num_pixies_attached();
   if (num_pixies <= 0) {
     fprintf(stderr, "Invalid number of pixies connected.\n");
     return EXIT_FAILURE;
@@ -51,17 +51,18 @@ int main(int argc, char * argv[])
 
   fprintf(stderr, "Hello Pixies:\n libpixyusb Version: %s\n", __LIBPIXY_VERSION__);
 
-  vector<int>      pixy_init_status(num_pixies);
+  vector<int>         pixy_init_status(num_pixies);
+  vector<PixyHandle>  pixy_handles(num_pixies);
   for (int i = 0; i < num_pixies; i++) {
     // Connect to Pixy //
-    pixy_init_status[i] = pixy_init(i);
+    pixy_init_status[i] = pixy_handles[i].init();
 
     // Was there an error initializing pixy? //
     if(pixy_init_status[i] != 0)
     {
       // Error initializing Pixy //
       fprintf(stderr, "pixy_init(): ");
-      pixy_error(i, pixy_init_status[i]);
+      pixy_handles[i].error(pixy_init_status[i]);
 
       return pixy_init_status[i];
     }
@@ -73,12 +74,12 @@ int main(int argc, char * argv[])
       uint16_t build;
       int      return_value;
 
-      return_value = pixy_get_firmware_version(i, &major, &minor, &build);
+      return_value = pixy_handles[i].get_firmware_version(&major, &minor, &build);
 
       if (return_value) {
         // Error //
         fprintf(stderr, "Failed to retrieve Pixy firmware version. ");
-        pixy_error(i, return_value);
+        pixy_handles[i].error(return_value);
 
         return return_value;
       } else {
@@ -104,17 +105,17 @@ int main(int argc, char * argv[])
     fprintf(stderr, "frame %d:\n", frame);
     for (int i = 0; i < num_pixies; i++) {
       // Wait for new blocks to be available //
-      while(!pixy_blocks_are_new(i) && run_flag); 
+      while(!pixy_handles[i].blocks_are_new() && run_flag); 
 
       // Get blocks from Pixy //
-      blocks_copied[i] = pixy_get_blocks(i, BLOCK_BUFFER_SIZE, &(blocks[i][0]));
+      blocks_copied[i] = pixy_handles[i].get_blocks(BLOCK_BUFFER_SIZE, &(blocks[i][0]));
 
       fprintf(stderr, " camera %d:\n", i);
 
       if(blocks_copied[i] < 0) {
         // Error: pixy_get_blocks //
         fprintf(stderr, "pixy_get_blocks(): ");
-        pixy_error(i, blocks_copied[i]);
+        pixy_handles[i].error(blocks_copied[i]);
       }
 
       // Display received blocks //
@@ -127,7 +128,7 @@ int main(int argc, char * argv[])
   }
 
   for (int i = 0; i < num_pixies; i++) {
-    pixy_close(i);
+    pixy_handles[i].close();
   }
 
   for (int i = 0; i < num_pixies; i++) {
