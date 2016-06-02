@@ -26,6 +26,7 @@
 #include "lax_robot_pixies_functions.hpp"
 
 #define BLOCK_BUFFER_SIZE    25
+#define MIN_BALL_SIZE        10
 
 using std::vector;
 
@@ -131,87 +132,90 @@ int main(int argc, char * argv[])
   fprintf(stderr, "Detecting blocks...\n");
   while(run_flag)
   {
-    //fprintf(stderr, "frame %d:\n", frame);
+    // fprintf(stderr, "frame %d:\n", frame);
+    // Wait for new blocks to be available //
     for (int i = 0; i < num_pixies; i++) {
-      // Wait for new blocks to be available //
       while(!pixy_handles[i].blocks_are_new() && run_flag); 
+    }
 
-      // Get blocks from Pixy //
-      blocks_copied[i] = pixy_handles[i].get_blocks(BLOCK_BUFFER_SIZE, &(blocks[i][0]));
+    if (run_flag) {
+      for (int i = 0; i < num_pixies; i++) {
+        // Get blocks from Pixy //
+        blocks_copied[i] = pixy_handles[i].get_blocks(BLOCK_BUFFER_SIZE, &(blocks[i][0]));
 
-      //fprintf(stderr, " camera %d:\n", i);
+        //fprintf(stderr, " camera %d:\n", i);
 
-      if(blocks_copied[i] < 0) {
-        // Error: pixy_get_blocks //
-        fprintf(stderr, "pixy_get_blocks(): ");
-        pixy_handles[i].error(blocks_copied[i]);
-      }
-
-      //Check for maximum size block
-      int max_size = 0;
-      int max_index = 0;
-      for (index = 0; index != blocks_copied[i]; ++index) {
-        int curr_size = blocks[i][index].width * blocks[i][index].height;
-        if (curr_size > max_size) {
-          max_size = curr_size;
-          max_index = index;
+        if(blocks_copied[i] < 0) {
+          // Error: pixy_get_blocks //
+          fprintf(stderr, "pixy_get_blocks(): ");
+          pixy_handles[i].error(blocks_copied[i]);
         }
+
+        //Check for maximum size block
+        int max_size = 0;
+        int max_index = 0;
+        for (index = 0; index != blocks_copied[i]; ++index) {
+          int curr_size = blocks[i][index].width * blocks[i][index].height;
+          if (curr_size > max_size) {
+            max_size = curr_size;
+            max_index = index;
+          }
+        }
+        pos_array[i][0] = blocks[i][max_index].x;
+        pos_array[i][1] = blocks[i][max_index].y;
+        size_array[i] = max_size;
+        //printf("Maximum size block has index: %d, size: %d\n", max_index, max_size);
+        //printf("Maximum size block has size %d\n", max_size);
+
+
+        //Check for closest block to the most relevant block of the last frame
+        // int min_diff = 10000;
+        // int min_index = 0;
+        // for (index = 0; index != blocks_copied[i]; ++index) {
+        //   int x_diff = abs(blocks[i][index].x - prev_frame_x);
+        //   int y_diff = abs(blocks[i][index].y - prev_frame_y);
+        //   if (x_diff + y_diff < min_diff) {
+        //     min_diff = x_diff + y_diff;
+        //     min_index = index;
+        //   }
+        // }
+        // printf("Closest block has index %d\n", min_index);
+        // printf("Closest block has position difference %d\n", min_diff);
+
+        // prev_frame_x = blocks[i][min_index].x;
+        // prev_frame_y = blocks[i][min_index].y;
       }
-      pos_array[i][0] = blocks[i][max_index].x;
-      pos_array[i][1] = blocks[i][max_index].y;
-      size_array[i] = max_size;
-      //printf("Maximum size block has index: %d, size: %d\n", max_index, max_size);
-      //printf("Maximum size block has size %d\n", max_size);
 
+      //NEED TO CHECK TO MAKE SURE THAT MAX SIZE BLOCK DETECTED BY BOTH CAMERAS IS THE SAME BLOCK
+      //Do the triangulation
+      if (size_array[0] > MIN_BALL_SIZE && size_array[1] > MIN_BALL_SIZE)
+      {
+        CalculateAngles(x_fov, y_fov, max_xpos, max_ypos, pos_array, angle_array);
 
-      //Check for closest block to the most relevant block of the last frame
-      // int min_diff = 10000;
-      // int min_index = 0;
-      // for (index = 0; index != blocks_copied[i]; ++index) {
-      //   int x_diff = abs(blocks[i][index].x - prev_frame_x);
-      //   int y_diff = abs(blocks[i][index].y - prev_frame_y);
-      //   if (x_diff + y_diff < min_diff) {
-      //     min_diff = x_diff + y_diff;
-      //     min_index = index;
-      //   }
-      // }
-      // printf("Closest block has index %d\n", min_index);
-      // printf("Closest block has position difference %d\n", min_diff);
+        CalculateLineVectors(angle_array, lines);
 
-      // prev_frame_x = blocks[i][min_index].x;
-      // prev_frame_y = blocks[i][min_index].y;
+        CreateLineMatrix(line_matrix, lines, cam1_x, cam1_y, cam1_z, cam2_x, cam2_y, cam2_z);
+
+        InnerProduct(line_matrix, lines[0], inner_prod1);
+        InnerProduct(line_matrix, lines[1], inner_prod2);
+        //printf("Inner Products: %f, %f, %f, %f, %f, %f.\n", inner_prod1[0],inner_prod1[1],inner_prod1[2],inner_prod2[0],inner_prod2[1],inner_prod2[2]);
+
+        CreateSolveMatrix(solve_matrix, inner_prod1, inner_prod2);
+
+        RowReduce(solve_matrix);
+        t = solve_matrix[0][2];
+        s = solve_matrix[1][2];
+        //printf("Solved matrix values: %f, %f.\n",t,s);
+
+        FindPoints(cam1_x, cam1_y, cam1_z, cam2_x, cam2_y, cam2_z, lines, point1, point2, midpoint, t, s);
+
+        // if (frame % 100 == 0)
+        fprintf(stderr, "3D Point Coordinate: X: %f, Y: %f, Z: %f.\n", midpoint[0],midpoint[1],midpoint[2]);
+      } 
+      else {
+        //printf("No matching blocks found.\n");
+      }
     }
-
-    //NEED TO CHECK TO MAKE SURE THAT MAX SIZE BLOCK DETECTED BY BOTH CAMERAS IS THE SAME BLOCK
-    //Do the triangulation
-    if (abs(size_array[0] - size_array[1]) < 500 && size_array[0] > 0 && size_array[1] > 0)
-    {
-      CalculateAngles(x_fov, y_fov, max_xpos, max_ypos, pos_array, angle_array);
-
-      CalculateLineVectors(angle_array, lines);
-
-      CreateLineMatrix(line_matrix, lines, cam1_x, cam1_y, cam1_z, cam2_x, cam2_y, cam2_z);
-
-      InnerProduct(line_matrix, lines[0], inner_prod1);
-      InnerProduct(line_matrix, lines[1], inner_prod2);
-      //printf("Inner Products: %f, %f, %f, %f, %f, %f.\n", inner_prod1[0],inner_prod1[1],inner_prod1[2],inner_prod2[0],inner_prod2[1],inner_prod2[2]);
-
-      CreateSolveMatrix(solve_matrix, inner_prod1, inner_prod2);
-
-      RowReduce(solve_matrix);
-      t = solve_matrix[0][2];
-      s = solve_matrix[1][2];
-      //printf("Solved matrix values: %f, %f.\n",t,s);
-
-      FindPoints(cam1_x, cam1_y, cam1_z, cam2_x, cam2_y, cam2_z, point1, point2, midpoint, t, s);
-
-      if (frame % 100 == 0)
-        printf("3D Point Coordinate: X: %f, Y: %f, Z: %f.\n", midpoint[0],midpoint[1],midpoint[2]);
-    } 
-    else {
-      //printf("No matching blocks found.\n");
-    }
-
 
     frame++;
   }
