@@ -105,11 +105,11 @@ int main(int argc, char * argv[])
   double angle_array[2][2];
   int size_array[2];
   double lines[2][3];
-  double cam1_x = -12.0;
-  double cam1_y = 17.0;
+  double cam1_x = -6.0;
+  double cam1_y = 0.0;
   double cam1_z = 0;
-  double cam2_x = 12.0;
-  double cam2_y = 17.0;
+  double cam2_x = 6.0;
+  double cam2_y = 0.0;
   double cam2_z = 0;
 
   double line_matrix[3][3];
@@ -213,7 +213,7 @@ int main(int argc, char * argv[])
         fprintf(stderr, "3D Point Coordinate: X: %f, Y: %f, Z: %f.\n", midpoint[0],midpoint[1],midpoint[2]);
       } 
       else {
-        //printf("No matching blocks found.\n");
+        fprintf(stderr, "No matching blocks found.\n");
       }
     }
 
