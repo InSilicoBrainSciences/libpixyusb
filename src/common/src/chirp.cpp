@@ -97,7 +97,7 @@ int Chirp::setLink(Link *link)
 
     if (m_sharedMem)
     {
-        m_buf = (uint8_t *)m_link->getFlags(LINK_FLAG_INDEX_SHARED_MEMORY_LOCATION);
+        m_buf = (uint8_t *)((intptr_t)m_link->getFlags(LINK_FLAG_INDEX_SHARED_MEMORY_LOCATION));
         m_bufSize = m_link->getFlags(LINK_FLAG_INDEX_SHARED_MEMORY_SIZE);
     }
     else

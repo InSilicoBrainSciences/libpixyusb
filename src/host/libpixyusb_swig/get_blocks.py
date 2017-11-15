@@ -23,7 +23,7 @@ frame  = 0
 # Wait for blocks #
 while 1:
 
-  count = pixy_get_blocks(100, blocks)
+  count = pixy_get_blocks(0, 100, blocks)
 
   if count > 0:
     # Blocks found #

@@ -94,6 +94,13 @@ class PixyInterpreter : public Interpreter
     */
     int send_command(const char * name, ...);
 
+    /**
+      @brief         Gets the device address of the Pixy this interpreter is associated with.
+      @return        Non-negative         The device address.
+      @return        Negative             Error
+    */
+    int device_address() const { return link_.device_address(); }
+
   private:
     
     ChirpReceiver *    receiver_;

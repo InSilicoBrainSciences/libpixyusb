@@ -26,6 +26,7 @@ add_definitions(-D__LIBPIXY_VERSION__="${LIBPIXY_VERSION}")
 
 add_library (pixyusb STATIC src/chirpreceiver.cpp
                             src/pixyinterpreter.cpp
+                            src/pixyhandle.cpp
                             src/pixy.cpp
                             src/usblink.cpp
                             src/utils/timer.cpp
@@ -41,5 +42,5 @@ include_directories (src
                      ${LIBUSB_1_INCLUDE_DIRS})
 
 install (TARGETS pixyusb DESTINATION lib)
-install (FILES include/pixy.h DESTINATION include)
+install (FILES include/pixy.h include/pixyhandle.hpp DESTINATION include)
 install (FILES ../../common/inc/pixydefs.h DESTINATION include)

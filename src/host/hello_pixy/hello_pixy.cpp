@@ -45,16 +45,16 @@ int main(int argc, char * argv[])
   // Catch CTRL+C (SIGINT) signals //
   signal(SIGINT, handle_SIGINT);
 
-  printf("Hello Pixy:\n libpixyusb Version: %s\n", __LIBPIXY_VERSION__);
+  fprintf(stderr, "Hello Pixy:\n libpixyusb Version: %s\n", __LIBPIXY_VERSION__);
 
   // Connect to Pixy //
   pixy_init_status = pixy_init();
 
   // Was there an error initializing pixy? //
-  if(!pixy_init_status == 0)
+  if(pixy_init_status != 0)
   {
     // Error initializing Pixy //
-    printf("pixy_init(): ");
+    fprintf(stderr, "pixy_init(): ");
     pixy_error(pixy_init_status);
 
     return pixy_init_status;
@@ -71,13 +71,13 @@ int main(int argc, char * argv[])
 
     if (return_value) {
       // Error //
-      printf("Failed to retrieve Pixy firmware version. ");
+      fprintf(stderr, "Failed to retrieve Pixy firmware version. ");
       pixy_error(return_value);
 
       return return_value;
     } else {
       // Success //
-      printf(" Pixy Firmware Version: %d.%d.%d\n", major, minor, build);
+      fprintf(stderr, " Pixy Firmware Version: %d.%d.%d\n", major, minor, build);
     }
   }
 
@@ -120,7 +120,7 @@ int main(int argc, char * argv[])
   }
 #endif
 
-  printf("Detecting blocks...\n");
+  fprintf(stderr, "Detecting blocks...\n");
   while(run_flag)
   {
     // Wait for new blocks to be available //
@@ -131,15 +131,15 @@ int main(int argc, char * argv[])
 
     if(blocks_copied < 0) {
       // Error: pixy_get_blocks //
-      printf("pixy_get_blocks(): ");
+      fprintf(stderr, "pixy_get_blocks(): ");
       pixy_error(blocks_copied);
     }
 
     // Display received blocks //
-    printf("frame %d:\n", i);
+    fprintf(stderr, "frame %d:\n", i);
     for(index = 0; index != blocks_copied; ++index) {    
        blocks[index].print(buf);
-       printf("  %s\n", buf);
+       fprintf(stderr, "  %s\n", buf);
     }
     i++;
   }

@@ -19,6 +19,8 @@ This directory contains:
 
 /src/host/hello_pixy - this directory contains an example program that uses libpixyusb for communicating with Pixy.
 
+/src/host/hello_pixies - this directory contains an example program that uses libpixyusb for communicating with multiple Pixies.
+
 /src/host/libpixyusb - this directory contains the USB library for communicating with Pixy.
 
 /src/host/arduino - this directory contains the Arduino library for communicating with Pixy.

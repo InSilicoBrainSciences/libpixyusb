@@ -35,7 +35,7 @@ int PixyInterpreter::init()
 
   if(thread_dead_ == false) 
   {
-    fprintf(stderr, "libpixy: Already initialized.");
+    fprintf(stderr, "libpixy: Already initialized.\n");
     return 0;
   }
 
