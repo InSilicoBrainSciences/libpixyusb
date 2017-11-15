@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/ptsh7jmy2dbhthpx?svg=true)](https://ci.appveyor.com/project/lsesterhenn/libpixyusb)
+
 # libpixyusb - Standalone Pixy Camera libray in C
 
 This is a fork of the [code surrounding the pixy camera](https://github.com/charmedlabs/pixy).
