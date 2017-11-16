@@ -15,7 +15,10 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <memory>
+#include <map>
 #include "pixyinterpreter.hpp"
+#include "usleep.h"
 
 PixyInterpreter::PixyInterpreter()
 {
@@ -50,7 +53,7 @@ int PixyInterpreter::init()
   // Create the interpreter thread //
 
   thread_dead_ = false;
-  thread_      = boost::thread(&PixyInterpreter::interpreter_thread, this);
+  thread_      = std::thread(&PixyInterpreter::interpreter_thread, this);
 
   return 0;
 }

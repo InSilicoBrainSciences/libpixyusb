@@ -17,8 +17,8 @@
 #define __PIXYINTERPRETER_HPP__
 
 #include <vector>
-#include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
+#include <thread>
+#include <mutex>
 #include "pixytypes.h"
 #include "pixy.h"
 #include "usblink.h"
@@ -105,12 +105,12 @@ class PixyInterpreter : public Interpreter
     
     ChirpReceiver *    receiver_;
     USBLink            link_;
-    boost::thread      thread_;
+    std::thread		   thread_;
     bool               thread_die_;
     bool               thread_dead_;
     std::vector<Block> blocks_;
-    boost::mutex       blocks_access_mutex_;
-    boost::mutex       chirp_access_mutex_;
+    std::mutex         blocks_access_mutex_;
+    std::mutex         chirp_access_mutex_;
     bool               blocks_are_new_;
 
     /**

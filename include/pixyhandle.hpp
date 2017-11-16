@@ -20,7 +20,7 @@
 #include <unistd.h>
 #include <pixydefs.h>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "pixy.h"
 
@@ -66,7 +66,7 @@ public:
   static int num_pixies_in_use();
 private:
   bool available_;
-  boost::shared_ptr<PixyInterpreter> interpreter_;
+  std::shared_ptr<PixyInterpreter> interpreter_;
 };
 
 #endif // __PIXY_HANDLE_H__

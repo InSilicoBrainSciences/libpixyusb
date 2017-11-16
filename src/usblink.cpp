@@ -13,7 +13,7 @@
 // end license header
 //
 
-#include <boost/container/set.hpp>
+#include <set>
 
 #include <unistd.h>
 #include <stdio.h>
@@ -23,8 +23,8 @@
 #include "utils/timer.hpp"
 #include "debuglog.h"
 
-boost::mutex USBLink::set_mutex_;
-boost::container::set<uint8_t> USBLink::devices_in_use_;
+std::mutex USBLink::set_mutex_;
+std::set<uint8_t> USBLink::devices_in_use_;
 
 USBLink::USBLink()
 {

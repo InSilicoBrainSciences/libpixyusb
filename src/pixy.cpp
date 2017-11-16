@@ -1,11 +1,11 @@
 #include <stdio.h>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "pixy.h"
 #include "pixyhandle.hpp"
 
-using boost::shared_ptr;
+using std::shared_ptr;
 
 PixyHandle handle;
 
@@ -40,7 +40,7 @@ PixyHandle handle;
   Required for runtime:
 
   - <a href=http://www.libusb.org>libusb</a>
-  - <a href=http://www.boost.org>libboost</a>
+
 
   \section getting_started Getting Started
  

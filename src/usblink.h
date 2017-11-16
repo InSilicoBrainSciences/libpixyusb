@@ -16,8 +16,8 @@
 #ifndef _USBLINK_H
 #define _USBLINK_H
 
-#include <boost/container/set.hpp>
-#include <boost/thread/mutex.hpp>
+#include <set>
+#include <mutex>
 
 #include <link.h>
 
@@ -42,8 +42,8 @@ public:
   static int numDevicesInUse();
 
 private:
-  static boost::mutex set_mutex_;
-  static boost::container::set<uint8_t> devices_in_use_;
+  static std::mutex set_mutex_;
+  static std::set<uint8_t> devices_in_use_;
   
   int openDevice();
   libusb_context *m_context;

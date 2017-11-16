@@ -17,15 +17,15 @@
 #include <unistd.h>
 #include <pixydefs.h>
 
-#include <boost/container/map.hpp>
-#include <boost/shared_ptr.hpp>
+#include <map>
+#include <memory>
 
 #include "pixy.h"
 #include "pixyhandle.hpp"
 #include "pixyinterpreter.hpp"
 
-using boost::container::map;
-using boost::shared_ptr;
+using std::map;
+using std::shared_ptr;
 
 map<uint8_t, shared_ptr<PixyInterpreter> > interpreters_;
 
