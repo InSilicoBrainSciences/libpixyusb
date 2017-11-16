@@ -1,5 +1,4 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/ptsh7jmy2dbhthpx?svg=true)](https://ci.appveyor.com/project/lsesterhenn/libpixyusb)
-![Build status](https://travis-ci.org/InSilicoBrainSciences/libpixyusb.svg?branch=master)
 
 # libpixyusb - Standalone Pixy Camera libray in C
 
