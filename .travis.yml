@@ -1,28 +1,22 @@
 language: cpp  
     
-sudo: enabled
+dist: trusty
+sudo: false
+
 os: linux
 
 compiler:
-  - g++
+  - clang
+  - gcc
   
 addons:
   apt:
     packages:
-    - g++-4.8
     - cmake
-
-before_install:
-  - sudo apt-get install libusb-1.0-0-dev
-  - sudo apt-get install g++
-  - sudo apt-get install cmake
+    - libusb-1.0-0-dev
   
 script:
 - makedir build
 - cd build
-- cmake..
+- cmake ..
 - make
-
-install: 
-- ./build_libpixyusb.sh
-- sudo./install_libpixyusb.sh
