@@ -18,7 +18,10 @@
 #include <memory>
 #include <map>
 #include "pixyinterpreter.hpp"
-#include "usleep.h"
+
+#if defined(_WIN32) || defined(_WIN64)
+  #include "usleep.h"
+#endif
 
 PixyInterpreter::PixyInterpreter()
 {
