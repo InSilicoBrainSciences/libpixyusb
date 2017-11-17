@@ -8,14 +8,17 @@ compiler:
   
 addons:
   apt:
-    sources:
-    - ubuntu-toolchain-r-test
     packages:
     - g++-4.8
     - cmake
 
 before_install:
+  - sudo apt-get install libusb-1.0-0-dev
   - sudo apt-get install g++
   - sudo apt-get install cmake
+ 
+  
 
-install: ./install_libpixyusb.sh
+install: 
+- ./build_libpixyusb.sh
+- sudo./install_libpixyusb.sh
