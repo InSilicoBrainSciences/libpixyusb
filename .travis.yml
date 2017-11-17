@@ -16,7 +16,7 @@ addons:
     - libusb-1.0-0-dev
   
 script:
-- makedir build
+- mkdir build
 - cd build
 - cmake ..
 - make
