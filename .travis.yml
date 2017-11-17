@@ -1,0 +1,13 @@
+language: cpp  
+    
+sudo: enabled
+os: osx
+
+compiler:
+  - g++
+
+before_install:
+  - sudo apt-get install g++
+  - sudo apt-get install cmake
+
+install: ./install_libpixyusb.sh
